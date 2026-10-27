@@ -1,0 +1,28 @@
+# Local Python environment and offline installer cache
+.venv/
+.wheels/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Generated paper collection and vector index
+data/papers/
+data/text/
+data/index/
+data/cache/
+data/*.tmp
+*.part
+
+# Hugging Face cache if a user points it into the project
+.cache/
+models/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local environment overrides
+.env

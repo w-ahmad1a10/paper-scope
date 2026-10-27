@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-scope"
+version = "0.1.0"
+description = "Semantic paragraph search over famous AI research papers"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "PaperScope contributors" }]
+dependencies = [
+    "numpy>=2.2,<3",
+    "requests>=2.32,<3",
+    "PyMuPDF>=1.24,<2",
+    "sentence-transformers>=6.0,<7",
+    "torch>=2.7",
+]
+
+[project.scripts]
+paper-scope = "paper_scope.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["paper_scope*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff.lint]
+ignore = ["FLY002"]
