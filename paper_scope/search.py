@@ -15,14 +15,22 @@ class Searcher:
         self.embedder = Embedder(self.index.model_name)
 
     def search(self, query: str, top_k: int = 1) -> list[SearchHit]:
+        """Return the top_k most similar papers to the question."""
+
         query = " ".join(query.split())
         if not query:
             raise ValueError("The question is empty")
-        prefix = str(
-            self.index.manifest.get("query_prefix", self.embedder.query_prefix)
-        )
-        query_vector = self.embedder.encode_one(prefix + query)
+        query_vector = self.embedder.encode_one(query)
         return self.index.search_vector(query_vector, top_k=top_k)
+
+    def search_all(self, query: str) -> list[SearchHit]:
+        """Return every paper ranked by similarity to the question."""
+
+        query = " ".join(query.split())
+        if not query:
+            raise ValueError("The question is empty")
+        query_vector = self.embedder.encode_one(query)
+        return self.index.all_scores(query_vector)
 
     @property
     def manifest(self) -> dict:

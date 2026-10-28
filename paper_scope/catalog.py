@@ -1,112 +1,58 @@
-"""The fixed reading list used to build the paper collection."""
+"""The paper collection is built by the user, not fixed in code."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+from .config import COLLECTION_FILE
 
 
-@dataclass(frozen=True)
-class Paper:
+@dataclass
+class PaperEntry:
     key: str
-    arxiv_id: str
     title: str
-    year: int
-    topic: str
-
-    @property
-    def pdf_url(self) -> str:
-        return f"https://arxiv.org/pdf/{self.arxiv_id}"
-
-    @property
-    def abs_url(self) -> str:
-        return f"https://arxiv.org/abs/{self.arxiv_id}"
+    path: str
+    arxiv_id: str | None = None
+    year: int | None = None
+    topic: str | None = None
 
 
-CATALOG: tuple[Paper, ...] = (
-    Paper(
-        key="attention",
-        arxiv_id="1706.03762",
-        title="Attention Is All You Need",
-        year=2017,
-        topic="Transformer foundations",
-    ),
-    Paper(
-        key="bert",
-        arxiv_id="1810.04805",
-        title="BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
-        year=2018,
-        topic="Bidirectional pretraining",
-    ),
-    Paper(
-        key="roberta",
-        arxiv_id="1907.11692",
-        title="RoBERTa: A Robustly Optimized BERT Pretraining Approach",
-        year=2019,
-        topic="Pretraining improvements",
-    ),
-    Paper(
-        key="electra",
-        arxiv_id="2003.10555",
-        title="ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators",
-        year=2020,
-        topic="Sample-efficient pretraining",
-    ),
-    Paper(
-        key="t5",
-        arxiv_id="1910.10683",
-        title="Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer",
-        year=2019,
-        topic="Text-to-text transfer learning",
-    ),
-    Paper(
-        key="gpt3",
-        arxiv_id="2005.14165",
-        title="Language Models are Few-Shot Learners",
-        year=2020,
-        topic="Scaling and in-context learning",
-    ),
-    Paper(
-        key="instructgpt",
-        arxiv_id="2203.02155",
-        title="Training Language Models to Follow Instructions with Human Feedback",
-        year=2022,
-        topic="Alignment with human feedback",
-    ),
-    Paper(
-        key="chinchilla",
-        arxiv_id="2203.15556",
-        title="Training Compute-Optimal Large Language Models",
-        year=2022,
-        topic="Scaling laws and data budgets",
-    ),
-    Paper(
-        key="llama",
-        arxiv_id="2302.13971",
-        title="LLaMA: Open and Efficient Foundation Language Models",
-        year=2023,
-        topic="Efficient open language models",
-    ),
-    Paper(
-        key="llama2",
-        arxiv_id="2307.09288",
-        title="Llama 2: Open Foundation and Fine-Tuned Chat Models",
-        year=2023,
-        topic="Open chat models and safety",
-    ),
-    Paper(
-        key="mistral",
-        arxiv_id="2310.06825",
-        title="Mistral 7B",
-        year=2023,
-        topic="Efficient small language models",
-    ),
-    Paper(
-        key="gpt4",
-        arxiv_id="2303.08774",
-        title="GPT-4 Technical Report",
-        year=2023,
-        topic="Frontier multimodal models",
-    ),
-)
+def load_collection(collection_file: Path = COLLECTION_FILE) -> list[PaperEntry]:
+    if not collection_file.is_file():
+        return []
+    try:
+        data = json.loads(collection_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    entries: list[PaperEntry] = []
+    for row in data:
+        try:
+            entries.append(PaperEntry(
+                key=str(row["key"]),
+                title=str(row["title"]),
+                path=str(row["path"]),
+                arxiv_id=row.get("arxiv_id"),
+                year=row.get("year"),
+                topic=row.get("topic"),
+            ))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return entries
 
-CATALOG_BY_KEY = {paper.key: paper for paper in CATALOG}
+
+def save_collection(
+    entries: list[PaperEntry],
+    collection_file: Path = COLLECTION_FILE,
+) -> None:
+    collection_file.parent.mkdir(parents=True, exist_ok=True)
+    collection_file.write_text(
+        json.dumps(
+            [asdict(entry) for entry in entries],
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )

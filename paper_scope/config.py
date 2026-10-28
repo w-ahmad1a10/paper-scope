@@ -13,24 +13,21 @@ DATA_DIR = Path(
 PAPERS_DIR = DATA_DIR / "papers"
 TEXT_DIR = DATA_DIR / "text"
 INDEX_DIR = DATA_DIR / "index"
+COLLECTION_FILE = DATA_DIR / "collection.json"
 CACHE_DIR = DATA_DIR / "cache"
 
-PAPERS_FILE = PAPERS_DIR / "papers.json"
-PARAGRAPHS_FILE = INDEX_DIR / "paragraphs.jsonl"
+PAPER_RECORDS_FILE = INDEX_DIR / "papers.jsonl"
 EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"
 MANIFEST_FILE = INDEX_DIR / "manifest.json"
 
 DEFAULT_MODEL = os.environ.get(
-    "PAPER_SCOPE_MODEL", "BAAI/bge-small-en-v1.5"
+    "PAPER_SCOPE_MODEL", "voyageai/voyage-4-nano"
 )
-DEFAULT_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 DEFAULT_BATCH_SIZE = 32
 
-# Paragraphs are built from complete sentences, aiming for this many characters.
-# The embedding model has a 256-token limit, so chunks are kept comfortably below it.
-TARGET_CHARS = 650
-MAX_CHARS = 900
-MIN_CHARS = 250
+# The embedding model must have a context window large enough for whole papers.
+# If a paper exceeds this token count, the tail is cut off and the loss is reported.
+DEFAULT_MAX_TOKENS = 120_000
 
 WEAK_MATCH_SCORE = 0.68
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2

@@ -1,28 +1,25 @@
-"""Build the full paper-to-vector index."""
+"""Build and update the whole-paper vector index from a user-built collection."""
 
 from __future__ import annotations
 
 import json
 import time
-from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .catalog import CATALOG, Paper
+from .catalog import PaperEntry, load_collection, save_collection
 from .config import (
     DEFAULT_BATCH_SIZE,
+    DEFAULT_MAX_TOKENS,
     DEFAULT_MODEL,
     INDEX_DIR,
-    MAX_CHARS,
-    MIN_CHARS,
-    PAPERS_FILE,
+    PAPER_RECORDS_FILE,
     SCHEMA_VERSION,
-    TARGET_CHARS,
     TEXT_DIR,
 )
-from .download import download_all
+from .download import copy_pdf
 from .embed import Embedder
-from .extract import Paragraph, extract_paper
+from .extract import extract_paper
 from .index_store import save_index
 
 
@@ -30,102 +27,245 @@ def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build_index(
+def add_paper(
+    key: str,
+    title: str,
+    source_path: Path,
     *,
-    papers: tuple[Paper, ...] | None = None,
-    limit: int | None = None,
-    force_download: bool = False,
     model_name: str = DEFAULT_MODEL,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
     index_dir: Path = INDEX_DIR,
+    collection_file: Path | None = None,
     printer=print,
 ) -> dict:
-    selected = tuple(papers or CATALOG)
-    if limit is not None:
-        if limit < 1:
-            raise ValueError("limit must be at least 1")
-        selected = selected[:limit]
+    """Add one paper to the collection and append its vector to the index."""
 
-    started = time.perf_counter()
-    printer(f"PaperScope build: {len(selected)} papers")
-    printer("")
+    if collection_file is None:
+        from .config import COLLECTION_FILE
 
-    pdf_paths = download_all(selected, force=force_download, printer=printer)
+        collection_file = COLLECTION_FILE
+
     TEXT_DIR.mkdir(parents=True, exist_ok=True)
-    PAPERS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-    all_paragraphs: list[Paragraph] = []
-    paper_stats: list[dict] = []
+    local_pdf = copy_pdf(source_path, key)
 
-    printer("")
-    printer("Extracting text and building paragraphs")
-    for position, (paper, pdf_path) in enumerate(zip(selected, pdf_paths), start=1):
-        printer(f"[{position}/{len(selected)}] {paper.key:11s} reading PDF")
-        extracted = extract_paper(pdf_path, paper)
-        (TEXT_DIR / f"{paper.key}.txt").write_text(extracted.text, encoding="utf-8")
-        all_paragraphs.extend(extracted.paragraphs)
+    extracted = extract_paper(local_pdf)
+    text_path = TEXT_DIR / f"{key}.txt"
+    text_path.write_text(extracted.text, encoding="utf-8")
 
-        stat = {
-            **asdict(paper),
-            "pages": extracted.page_count,
-            "body_pages": extracted.body_pages,
-            "paragraphs": len(extracted.paragraphs),
-        }
-        paper_stats.append(stat)
-        printer(
-            f"             {extracted.body_pages:2d}/{extracted.page_count:2d} pages, "
-            f"{len(extracted.paragraphs):4d} paragraphs"
-        )
+    embedder = Embedder(model_name, batch_size=batch_size, max_tokens=max_tokens)
+    token_estimate = embedder.estimate_tokens(extracted.text)
 
-    if not all_paragraphs:
-        raise RuntimeError("No paragraphs were extracted from any paper")
-
-    PAPERS_FILE.write_text(
-        json.dumps(paper_stats, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
+    truncated = token_estimate > embedder.max_seq_length
+    truncation_rate = (
+        (token_estimate - embedder.max_seq_length) / token_estimate
+        if truncated and token_estimate > 0
+        else 0.0
     )
 
-    printer("")
-    printer(f"Paragraphs: {len(all_paragraphs)}")
-    printer(f"Loading embedding model: {model_name}")
-    embedder = Embedder(model_name, batch_size=batch_size)
-    printer(
-        f"Model ready: {embedder.dimension} dimensions, "
-        f"max {embedder.max_seq_length} tokens"
-    )
+    vector = embedder.encode_one(extracted.text)
 
-    texts = [paragraph.text for paragraph in all_paragraphs]
-    printer(f"Embedding {len(texts)} paragraphs on {embedder.device}")
-    vectors = embedder.encode(texts, show_progress_bar=True, batch_size=batch_size)
-    if vectors.shape != (len(all_paragraphs), embedder.dimension):
-        raise RuntimeError(
-            f"Embedding shape mismatch: {vectors.shape} for {len(all_paragraphs)} paragraphs"
-        )
+    # Load existing records if present.
+    records: list[dict] = []
+    vectors: list = []
+    if PAPER_RECORDS_FILE.is_file():
+        try:
+            with PAPER_RECORDS_FILE.open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    if line.strip():
+                        records.append(json.loads(line))
+        except (OSError, json.JSONDecodeError):
+            records = []
+    vectors_path = index_dir / "embeddings.npy"
+    if vectors_path.is_file():
+        import numpy as np
+
+        old = np.load(vectors_path, allow_pickle=False)
+        vectors = list(old)
+
+    # Remove any existing record with the same key, then append.
+    records = [row for row in records if row.get("key") != key]
+    vectors = [vec for vec, row in zip(vectors, records) if row.get("key") != key]
+
+    record = {
+        "key": key,
+        "title": title,
+        "path": str(local_pdf),
+        "text_path": str(text_path),
+        "arxiv_id": None,
+        "year": None,
+        "topic": None,
+        "page_count": extracted.page_count,
+        "body_pages": extracted.body_pages,
+        "removed_references": extracted.removed_references,
+        "token_estimate": token_estimate,
+        "truncated": truncated,
+        "truncation_rate": round(truncation_rate, 6),
+    }
+    records.append(record)
+    vectors.append(vector)
+
+    import numpy as np
+
+    matrix = np.asarray(vectors, dtype=np.float32)
+    matrix = np.ascontiguousarray(matrix)
 
     manifest = {
         "schema_version": SCHEMA_VERSION,
         "built_at": _now(),
         "model_name": embedder.model_name,
-        "query_prefix": embedder.query_prefix,
         "dimension": embedder.dimension,
         "max_seq_length": embedder.max_seq_length,
         "normalized": True,
         "similarity": "cosine (dot product of L2-normalised vectors)",
-        "paragraph_count": len(all_paragraphs),
-        "paper_count": len(selected),
-        "chunking": {
-            "target_chars": TARGET_CHARS,
-            "max_chars": MAX_CHARS,
-            "min_chars": MIN_CHARS,
-            "boundary": "sentence",
-        },
-        "papers": paper_stats,
+        "paper_count": len(records),
+        "max_tokens": max_tokens,
+        "papers": records,
     }
 
-    save_index(all_paragraphs, vectors, manifest, index_dir=index_dir)
-    elapsed = time.perf_counter() - started
+    save_index(records, matrix, manifest, index_dir=index_dir)
+    save_collection(
+        [
+            PaperEntry(
+                key=row["key"],
+                title=row["title"],
+                path=row["path"],
+                arxiv_id=row.get("arxiv_id"),
+                year=row.get("year"),
+                topic=row.get("topic"),
+            )
+            for row in records
+        ],
+        collection_file=collection_file,
+    )
 
+    printer(
+        f"Added {key:11s} | pages {extracted.body_pages:2d}/{extracted.page_count:2d} "
+        f"| tokens {token_estimate:6d} | truncated {truncated} | "
+        f"rate {truncation_rate:.4f}"
+    )
+    return manifest
+
+
+def build_index(
+    *,
+    model_name: str = DEFAULT_MODEL,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
+    index_dir: Path = INDEX_DIR,
+    collection_file: Path | None = None,
+    printer=print,
+) -> dict:
+    """Rebuild the whole index from the saved collection."""
+
+    if collection_file is None:
+        from .config import COLLECTION_FILE
+
+        collection_file = COLLECTION_FILE
+
+    entries = load_collection(collection_file)
+    if not entries:
+        raise RuntimeError("No papers in the collection. Add papers first.")
+
+    TEXT_DIR.mkdir(parents=True, exist_ok=True)
+    INDEX_DIR.mkdir(parents=True, exist_ok=True)
+
+    records: list[dict] = []
+    vectors: list = []
+
+    started = time.perf_counter()
+    printer(f"Building index: {len(entries)} papers")
     printer("")
-    printer(f"Saved {len(all_paragraphs)} vectors to {index_dir}")
+
+    for position, entry in enumerate(entries, start=1):
+        pdf_path = Path(entry.path)
+        if not pdf_path.is_file():
+            printer(f"[{position}/{len(entries)}] {entry.key:11s} missing PDF, skipping")
+            continue
+
+        printer(f"[{position}/{len(entries)}] {entry.key:11s} reading PDF")
+        extracted = extract_paper(pdf_path)
+        text_path = TEXT_DIR / f"{entry.key}.txt"
+        text_path.write_text(extracted.text, encoding="utf-8")
+
+        embedder = Embedder(model_name, batch_size=batch_size, max_tokens=max_tokens)
+        token_estimate = embedder.estimate_tokens(extracted.text)
+
+        truncated = token_estimate > embedder.max_seq_length
+        truncation_rate = (
+            (token_estimate - embedder.max_seq_length) / token_estimate
+            if truncated and token_estimate > 0
+            else 0.0
+        )
+
+        vector = embedder.encode_one(extracted.text)
+
+        record = {
+            "key": entry.key,
+            "title": entry.title,
+            "path": str(pdf_path),
+            "text_path": str(text_path),
+            "arxiv_id": entry.arxiv_id,
+            "year": entry.year,
+            "topic": entry.topic,
+            "page_count": extracted.page_count,
+            "body_pages": extracted.body_pages,
+            "removed_references": extracted.removed_references,
+            "token_estimate": token_estimate,
+            "truncated": truncated,
+            "truncation_rate": round(truncation_rate, 6),
+        }
+        records.append(record)
+        vectors.append(vector)
+
+        printer(
+            f"             {extracted.body_pages:2d}/{extracted.page_count:2d} pages "
+            f"| tokens {token_estimate:6d} | truncated {truncated} | "
+            f"rate {truncation_rate:.4f}"
+        )
+
+    if not records:
+        raise RuntimeError("No papers were extracted successfully")
+
+    import numpy as np
+
+    matrix = np.asarray(vectors, dtype=np.float32)
+    matrix = np.ascontiguousarray(matrix)
+
+    embedder = Embedder(model_name, batch_size=batch_size, max_tokens=max_tokens)
+    manifest = {
+        "schema_version": SCHEMA_VERSION,
+        "built_at": _now(),
+        "model_name": embedder.model_name,
+        "dimension": embedder.dimension,
+        "max_seq_length": embedder.max_seq_length,
+        "normalized": True,
+        "similarity": "cosine (dot product of L2-normalised vectors)",
+        "paper_count": len(records),
+        "max_tokens": max_tokens,
+        "papers": records,
+    }
+
+    save_index(records, matrix, manifest, index_dir=index_dir)
+    save_collection(
+        [
+            PaperEntry(
+                key=row["key"],
+                title=row["title"],
+                path=row["path"],
+                arxiv_id=row.get("arxiv_id"),
+                year=row.get("year"),
+                topic=row.get("topic"),
+            )
+            for row in records
+        ],
+        collection_file=collection_file,
+    )
+
+    elapsed = time.perf_counter() - started
+    printer("")
+    printer(f"Saved {len(records)} vectors to {index_dir}")
     printer(f"Build finished in {elapsed / 60:.1f} minutes")
     return manifest

@@ -1,19 +1,17 @@
-"""Sentence-embedding model loading and batch encoding."""
+"""Sentence-embedding model loading and whole-document encoding."""
 
 from __future__ import annotations
 
 import os
-from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 
-from .config import (
-    CACHE_DIR,
-    DEFAULT_BATCH_SIZE,
-    DEFAULT_MODEL,
-    DEFAULT_QUERY_PREFIX,
-)
+from .config import CACHE_DIR, DEFAULT_BATCH_SIZE, DEFAULT_MAX_TOKENS, DEFAULT_MODEL
+
+
+class EmbeddingError(RuntimeError):
+    """Raised when the embedding model cannot be loaded or used."""
 
 
 def _can_write_directory(path: Path) -> bool:
@@ -32,7 +30,6 @@ def _configure_model_cache() -> None:
 
     fallback = CACHE_DIR / "huggingface"
     if not _can_write_directory(fallback):
-        # Let the Hugging Face libraries report a useful error themselves.
         return
 
     hub_fallback = fallback / "hub"
@@ -56,16 +53,6 @@ def _configure_model_cache() -> None:
 _configure_model_cache()
 
 
-class EmbeddingError(RuntimeError):
-    """Raised when the embedding model cannot be loaded or used."""
-
-
-def query_prefix_for_model(model_name: str) -> str:
-    if "bge" in model_name.lower():
-        return DEFAULT_QUERY_PREFIX
-    return ""
-
-
 class Embedder:
     def __init__(
         self,
@@ -73,17 +60,18 @@ class Embedder:
         *,
         device: str | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
     ) -> None:
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise EmbeddingError(
-                "The sentence-transformers package is not installed"
+                "The sentence-embedding package is not installed"
             ) from exc
 
         self.model_name = model_name
-        self.query_prefix = query_prefix_for_model(model_name)
         self.batch_size = batch_size
+        self.max_tokens = max_tokens
         try:
             self._model = SentenceTransformer(model_name, device=device)
         except Exception as exc:
@@ -91,49 +79,65 @@ class Embedder:
                 f"Could not load embedding model '{model_name}': {exc}"
             ) from exc
 
-        get_dimension = getattr(
-            self._model,
-            "get_embedding_dimension",
-            self._model.get_sentence_embedding_dimension,
+        self.dimension = int(
+            getattr(
+                self._model,
+                "get_embedding_dimension",
+                self._model.get_sentence_embedding_dimension,
+            )()
         )
-        self.dimension = int(get_dimension())
         self.max_seq_length = int(self._model.max_seq_length)
 
     @property
     def device(self) -> str:
         return str(self._model.device)
 
-    def encode(
-        self,
-        texts: Sequence[str],
-        *,
-        show_progress_bar: bool = False,
-        batch_size: int | None = None,
-    ) -> np.ndarray:
-        if not texts:
-            raise EmbeddingError("Cannot encode an empty list of texts")
+    def encode_one(self, text: str) -> np.ndarray:
+        """Encode one whole document and return its vector."""
 
         try:
             vectors = self._model.encode(
-                list(texts),
-                batch_size=batch_size or self.batch_size,
-                show_progress_bar=show_progress_bar,
+                [text],
+                batch_size=self.batch_size,
+                show_progress_bar=False,
+                convert_to_numpy=True,
+                normalize_embeddings=True,
+                truncate_dim=self.dimension,
+            )
+        except TypeError:
+            # Older sentence-transformers versions may not accept truncate_dim.
+            vectors = self._model.encode(
+                [text],
+                batch_size=self.batch_size,
+                show_progress_bar=False,
                 convert_to_numpy=True,
                 normalize_embeddings=True,
             )
-        except Exception as exc:
-            raise EmbeddingError(f"Embedding failed: {exc}") from exc
 
         matrix = np.asarray(vectors, dtype=np.float32)
         if matrix.ndim == 1:
             matrix = matrix[None, :]
-        if matrix.ndim != 2 or matrix.shape[1] != self.dimension:
+        if matrix.shape[1] != self.dimension:
             raise EmbeddingError(
                 f"Unexpected embedding shape {matrix.shape}; expected (*, {self.dimension})"
             )
         if not np.isfinite(matrix).all():
             raise EmbeddingError("Embedding model produced non-finite values")
-        return np.ascontiguousarray(matrix)
+        return np.ascontiguousarray(matrix)[0]
 
-    def encode_one(self, text: str) -> np.ndarray:
-        return self.encode([text])[0]
+    def estimate_tokens(self, text: str) -> int:
+        """Estimate token count using the model tokenizer when available."""
+
+        try:
+            tokenizer = self._model.tokenizer
+        except AttributeError:
+            return max(len(text) // 4, 1)
+
+        try:
+            tokens = tokenizer(text, return_tensors=None, add_special_tokens=True)
+            ids = tokens["input_ids"] if isinstance(tokens, dict) else tokens
+            if isinstance(ids, list):
+                return len(ids[0]) if ids and isinstance(ids[0], list) else len(ids)
+            return int(ids.shape[-1])
+        except Exception:  # noqa: BLE001 - tokenizer fallback for missing tokenizer.
+            return max(len(text) // 4, 1)
