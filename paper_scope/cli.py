@@ -378,7 +378,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not getattr(args, "command", None):
-        args = argparse.Namespace(func=cmd_ask, model=DEFAULT_MODEL, batch_size=32, max_tokens=DEFAULT_MAX_TOKENS)
+        from .gui import launch_gui
+
+        launch_gui()
+        return 0
 
     try:
         result = args.func(args)
