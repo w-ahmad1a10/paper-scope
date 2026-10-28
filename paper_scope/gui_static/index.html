@@ -5,213 +5,407 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PaperScope - Semantic Paper Search</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    background: #f5f5f7;
-    color: #1d1d1f;
   }
+
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --radius: 12px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
   header {
-    background: #1d1d1f;
+    background: var(--text);
     color: #fff;
-    padding: 14px 24px;
-    font-size: 18px;
+    padding: 16px 24px;
+    font-size: 17px;
     font-weight: 600;
+    letter-spacing: -0.01em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
+
   .container {
     display: flex;
     height: calc(100vh - 52px);
     gap: 16px;
     padding: 16px;
+    overflow: hidden;
   }
+
   .left-panel {
-    flex: 0 0 320px;
-    background: #fff;
-    border: 1px solid #d2d2d7;
-    border-radius: 12px;
-    padding: 16px;
+    flex: 0 0 340px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
   }
+
   .right-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
   }
+
   h2 {
-    font-size: 16px;
-    margin: 0 0 10px 0;
-    color: #1d1d1f;
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
+
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
   .btn {
-    background: #0071e3;
+    background: var(--primary);
     color: #fff;
     border: none;
     border-radius: 8px;
     padding: 10px 16px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
   }
-  .btn:hover { background: #0077ed; }
-  .btn:disabled { background: #8e8e93; cursor: not-allowed; }
-  .btn.secondary { background: #f5f5f7; color: #1d1d1f; }
-  .btn.secondary:hover { background: #e5e5ea; }
+
+  .btn:hover {
+    background: var(--primary-hover);
+  }
+
+  .btn:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+  }
+
+  .btn.secondary {
+    background: #f1f5f9;
+    color: var(--text);
+  }
+
+  .btn.secondary:hover {
+    background: #e2e8f0;
+  }
+
   .input-group {
     display: flex;
+    flex-direction: column;
     gap: 8px;
-    margin-bottom: 12px;
   }
-  input[type="text"], textarea {
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"], textarea, input[type="file"] {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #d2d2d7;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
+    background: #fff;
   }
+
+  input[type="text"]:focus, textarea:focus, input[type="file"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    ring: 2px solid rgba(37, 99, 235, 0.3);
+  }
+
   textarea {
     resize: vertical;
-    min-height: 80px;
+    min-height: 90px;
   }
+
   .status {
     font-size: 13px;
-    color: #86868b;
-    background: #f5f5f7;
+    color: var(--muted);
+    background: #f8fafc;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 10px;
-    min-height: 40px;
+    padding: 12px;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
+
   .card {
-    background: #fff;
-    border: 1px solid #d2d2d7;
-    border-radius: 12px;
-    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
   }
+
   .result-card {
-    background: #fff;
-    border: 1px solid #d2d2d7;
-    border-radius: 12px;
-    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
     flex: 0 0 auto;
   }
+
   .result-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
+
   .score-badge {
-    background: #0071e3;
+    background: var(--primary);
     color: #fff;
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
   }
+
+  .score-badge.weak {
+    background: var(--warning);
+  }
+
+  .score-badge.failed {
+    background: var(--danger);
+  }
+
   .paper-title {
     font-size: 17px;
-    font-weight: 600;
+    font-weight: 700;
     margin: 0 0 6px 0;
+    color: var(--text);
   }
+
   .paper-meta {
     font-size: 13px;
-    color: #86868b;
+    color: var(--muted);
     margin: 2px 0;
   }
+
   .preview {
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.6;
     white-space: pre-wrap;
-    color: #1d1d1f;
-    border-top: 1px solid #d2d2d7;
-    padding-top: 10px;
-    margin-top: 10px;
-    max-height: 300px;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 12px;
+    max-height: 260px;
     overflow-y: auto;
   }
+
   .scores-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+    margin-top: 8px;
   }
+
   .scores-table th {
     text-align: left;
-    color: #86868b;
-    padding: 8px;
-    border-bottom: 1px solid #d2d2d7;
+    color: var(--muted);
+    padding: 10px 8px;
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
   }
+
   .scores-table td {
-    padding: 8px;
-    border-bottom: 1px solid #e5e5ea;
+    padding: 10px 8px;
+    border-bottom: 1px solid #f1f5f9;
   }
+
+  .scores-table tr:hover {
+    background: #f8fafc;
+  }
+
+  .rank {
+    font-weight: 700;
+    color: var(--muted);
+  }
+
   .truncated-badge {
-    background: #ffd230;
-    color: #1d1d1f;
-    font-size: 11px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
     padding: 2px 6px;
     border-radius: 4px;
-    margin-left: 8px;
+    margin-left: 6px;
+    font-weight: 600;
   }
-  .hidden { display: none; }
+
+  .empty-state {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .success-banner {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .list-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid transparent;
+    margin-bottom: 6px;
+  }
+
+  .list-item:hover {
+    background: #f1f5f9;
+    border-color: var(--border);
+  }
+
+  .list-item.selected {
+    background: #eff6ff;
+    border-color: var(--primary);
+  }
+
+  .file-input-wrapper {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="file"] {
+    padding: 6px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 900px) {
+    .container {
+      flex-direction: column;
+    }
+    .left-panel {
+      flex: 0 0 auto;
+      max-height: 400px;
+    }
+    .right-panel {
+      flex: 1;
+    }
+  }
 </style>
 </head>
 <body>
 <header>PaperScope - Semantic Paper Search</header>
 <div class="container">
   <div class="left-panel">
-    <h2>Collection</h2>
-    <div class="input-group">
-      <input type="text" id="pdfPath" placeholder="PDF file path">
-      <button class="btn secondary" id="browseBtn">Browse</button>
-    </div>
-    <input type="text" id="paperName" placeholder="Paper name">
-    <button class="btn" id="addBtn">Add Paper</button>
-    <div id="status" class="status">Loading...</div>
-    <button class="btn secondary" id="listBtn">Refresh List</button>
-    <ul id="paperList" style="list-style:none;padding:0;margin:0;flex:1;overflow:auto;">
-    </ul>
+    <section class="section">
+      <h2>Add Paper</h2>
+      <div class="file-input-wrapper">
+        <input type="text" id="pdfPath" placeholder="C:\Path\To\paper.pdf" style="flex:1;">
+        <input type="file" id="filePicker" accept=".pdf" style="display:none;">
+        <button class="btn secondary" id="browseBtn" style="padding:10px 14px;">Browse</button>
+      </div>
+      <input type="text" id="paperName" placeholder="Paper name">
+      <button class="btn" id="addBtn">Add Paper</button>
+    </section>
+
+    <section class="section">
+      <h2>Collection</h2>
+      <button class="btn secondary" id="listBtn" style="width:auto; padding:8px 14px; font-size:13px;">Refresh List</button>
+      <ul id="paperList" style="list-style:none;padding:0;margin:0;">
+      </ul>
+      <div id="collectionEmpty" class="empty-state" style="margin-top:16px;">No papers yet.</div>
+    </section>
   </div>
+
   <div class="right-panel">
-    <div class="card">
+    <section class="card">
       <h2>Ask a Question</h2>
       <textarea id="question" placeholder="Type your research question here..."></textarea>
       <button class="btn" id="askBtn">Ask</button>
-    </div>
-    <div class="card result-card">
+    </section>
+
+    <section class="result-card">
       <h2>Closest Match</h2>
-      <div id="resultHeader" class="result-header hidden">
+      <div id="resultHeader" style="display:none;">
         <div>
           <div class="paper-title" id="resultTitle"></div>
           <div class="paper-meta" id="resultMeta"></div>
         </div>
-        <div class="score-badge" id="resultScore"></div>
+        <div class="score-badge" id="resultScore">Similarity: --</div>
       </div>
-      <div id="resultPreview" class="preview hidden"></div>
-    </div>
-    <div class="card">
+      <div id="resultPreview" class="preview" style="display:none;"></div>
+    </section>
+
+    <section class="card">
       <h2>All Paper Scores</h2>
       <table class="scores-table" id="scoresTable">
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Score</th>
-            <th>Key</th>
+            <th style="width:50px;">Rank</th>
+            <th style="width:70px;">Score</th>
+            <th style="width:150px;">Key</th>
             <th>Title</th>
+            <th style="width:100px;">Status</th>
           </tr>
         </thead>
-        <tbody id="scoresBody"></tbody>
+        <tbody id="scoresBody">
+          <tr>
+            <td colspan="5" class="empty-state">Ask a question to see rankings.</td>
+          </tr>
+        </tbody>
       </table>
-    </div>
+    </section>
   </div>
 </div>
+
 <script>
   const API = '/api';
   const el = id => document.getElementById(id);
@@ -221,30 +415,52 @@
     if (body) opts.body = new URLSearchParams(body).toString();
     const res = await fetch(API + path, opts);
     const text = await res.text();
-    try { return JSON.parse(text); } catch { return { error: text || res.statusText }; }
+    try { return { ok: res.ok, data: JSON.parse(text) }; } catch { return { ok: false, data: { error: text || res.statusText } }; }
   }
 
   async function loadStatus() {
-    const data = await fetchJSON('/status');
-    el('status').textContent = `Ready - ${data.paper_count} papers (${data.model})`;
+    const r = await fetchJSON('/status');
+    if (r.ok) {
+      el('status').innerHTML = `<span style="font-weight:600;">${r.data.paper_count}</span> papers &bull; Model: ${r.data.model}`;
+    } else {
+      el('status').textContent = 'Error loading status.';
+    }
   }
 
   async function loadPapers() {
-    const data = await fetchJSON('/papers');
+    const r = await fetchJSON('/papers');
     const list = el('paperList');
+    const empty = el('collectionEmpty');
     list.innerHTML = '';
-    for (const p of data.papers) {
-      const li = document.createElement('li');
-      li.style.padding = '8px';
-      li.style.borderBottom = '1px solid #e5e5ea';
-      li.textContent = `${p.key} — ${p.title}`;
-      if (p.truncated) {
-        const badge = document.createElement('span');
-        badge.className = 'truncated-badge';
-        badge.textContent = 'truncated';
-        li.appendChild(badge);
-      }
-      list.appendChild(li);
+    currentPapers = r.data.papers || [];
+
+    if (currentPapers.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      currentPapers.forEach((p, idx) => {
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+        const info = document.createElement('div');
+        info.textContent = `${p.key} — ${p.title}`;
+        if (p.truncated) {
+          const badge = document.createElement('span');
+          badge.className = 'truncated-badge';
+          badge.textContent = 'truncated';
+          info.appendChild(document.createTextNode(' '));
+          info.appendChild(badge);
+        }
+        const meta = document.createElement('div');
+        meta.style.fontSize = '11px';
+        meta.style.color = '#64748b';
+        meta.textContent = p.pages ? `${p.body_pages}/${p.page_count} pages` : '';
+        li.appendChild(info);
+        li.appendChild(meta);
+        list.appendChild(li);
+      });
     }
   }
 
@@ -252,37 +468,47 @@
     const q = el('question').value.trim();
     if (!q) return;
     el('askBtn').disabled = true;
-    el('resultHeader').classList.add('hidden');
-    el('resultPreview').classList.add('hidden');
+    el('askBtn').textContent = 'Searching...';
+    el('resultHeader').style.display = 'none';
+    el('resultPreview').style.display = 'none';
     el('resultPreview').textContent = '';
-    el('scoresBody').innerHTML = '<tr><td colspan="4">Searching...</td></tr>';
+    const body = el('scoresBody');
+    body.innerHTML = '<tr><td colspan="5" class="empty-state">Searching...</td></tr>';
     const data = await fetchJSON('/ask', 'POST', { question: q });
     el('askBtn').disabled = false;
-    if (data.error) {
-      el('scoresBody').innerHTML = `<tr><td colspan="4" style="color:#d63232;">Error: ${data.error}</td></tr>`;
+    el('askBtn').textContent = 'Ask';
+    if (!data.ok) {
+      body.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--danger);">Error: ${data.error}</td></tr>`;
       return;
     }
-    const top = data.results[0];
+    renderResults(r.data.results);
+  }
+
+  function renderResults(results) {
+    const top = results[0];
     const header = el('resultHeader');
-    header.classList.remove('hidden');
+    header.style.display = 'flex';
     el('resultTitle').textContent = top.title;
     const meta = [];
     if (top.year) meta.push(`Year: ${top.year}`);
     if (top.arxiv_id) meta.push(`arXiv: ${top.arxiv_id}`);
     meta.push(`Key: ${top.key}`);
     meta.push(`Pages: ${top.body_pages}/${top.page_count}`);
-    if (top.truncated) meta.push(`Truncated: rate ${top.truncation_rate?.toFixed(4)}`);
+    if (top.truncated) meta.push(`Truncated: rate ${(top.truncation_rate || 0).toFixed(4)}`);
     el('resultMeta').textContent = meta.join('  |  ');
-    el('resultScore').textContent = `Similarity: ${top.score.toFixed(4)}`;
-    el('resultPreview').classList.remove('hidden');
+    const scoreEl = el('resultScore');
+    scoreEl.textContent = `Similarity: ${top.score.toFixed(4)}`;
+    scoreEl.className = 'score-badge' + (top.score < 0.68 ? ' weak' : '');
+    el('resultPreview').style.display = 'block';
     el('resultPreview').textContent = top.preview || '(No preview available)';
 
-    const body = el('scoresBody');
-    body.innerHTML = '';
-    for (const r of data.results) {
+    const tbody = el('scoresBody');
+    tbody.innerHTML = '';
+    for (const r of results) {
       const tr = document.createElement('tr');
+      const status = r.truncated ? '<span class="truncated-badge">truncated</span>' : '';
       tr.innerHTML = `<td>${r.rank}</td><td>${r.score.toFixed(4)}</td><td>${r.key}</td><td>${r.title}${r.truncated ? ' <span class="truncated-badge">truncated</span>' : ''}</td>`;
-      body.appendChild(tr);
+      tbody.appendChild(tr);
     }
   }
 
@@ -294,9 +520,11 @@
       return;
     }
     el('addBtn').disabled = true;
+    el('addBtn').textContent = 'Adding...';
     const data = await fetchJSON('/add', 'POST', { path, name });
     el('addBtn').disabled = false;
-    if (data.error) {
+    el('addBtn').textContent = 'Add Paper';
+    if (!data.ok) {
       alert('Error: ' + data.error);
       return;
     }
@@ -304,26 +532,44 @@
     el('paperName').value = '';
     await loadStatus();
     await loadPapers();
-    alert(data.message || 'Paper added.');
+    alert(r.data.message || 'Paper added.');
   }
 
   async function rebuild() {
-    if (!confirm('Rebuild the entire index from saved collection?')) return;
+    if (!confirm('Rebuild the entire index from saved collection? This will re-encode all papers.')) return;
     const data = await fetchJSON('/rebuild', 'POST');
-    if (data.error) {
+    if (data.ok) {
+      await loadStatus();
+      await loadPapers();
+      alert(data.message || 'Index rebuilt.');
+    } else {
       alert('Error: ' + data.error);
-      return;
     }
-    await loadStatus();
-    await loadPapers();
-    alert(data.message || 'Index rebuilt.');
   }
+
+  el('browseBtn').addEventListener('click', () => {
+    el('filePicker').click();
+  });
+
+  el('filePicker').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      el('pdfPath').value = file.path || file.name;
+      if (file.path && file.path.includes('fakepath')) {
+        alert('Your browser returned a fake path for security. Please type or paste the full PDF path manually.');
+      }
+    }
+  });
 
   el('askBtn').addEventListener('click', ask);
   el('addBtn').addEventListener('click', addPaper);
   el('listBtn').addEventListener('click', loadPapers);
-  el('browseBtn').addEventListener('click', () => {
-    alert('Please type or paste the full PDF path into the field above.');
+
+  el('question').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      ask();
+    }
   });
 
   loadStatus();
