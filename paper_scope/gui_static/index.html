@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PaperScope - Semantic Paper Search</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f5f7;
+    color: #1d1d1f;
+  }
+  header {
+    background: #1d1d1f;
+    color: #fff;
+    padding: 14px 24px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .container {
+    display: flex;
+    height: calc(100vh - 52px);
+    gap: 16px;
+    padding: 16px;
+  }
+  .left-panel {
+    flex: 0 0 320px;
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  h2 {
+    font-size: 16px;
+    margin: 0 0 10px 0;
+    color: #1d1d1f;
+  }
+  .btn {
+    background: #0071e3;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #0077ed; }
+  .btn:disabled { background: #8e8e93; cursor: not-allowed; }
+  .btn.secondary { background: #f5f5f7; color: #1d1d1f; }
+  .btn.secondary:hover { background: #e5e5ea; }
+  .input-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  input[type="text"], textarea {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  .status {
+    font-size: 13px;
+    color: #86868b;
+    background: #f5f5f7;
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 40px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    border-radius: 12px;
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .result-card {
+    background: #fff;
+    border: 1px solid #d2d2d7;
+    border-radius: 12px;
+    padding: 16px;
+    flex: 0 0 auto;
+  }
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .score-badge {
+    background: #0071e3;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .paper-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+  }
+  .paper-meta {
+    font-size: 13px;
+    color: #86868b;
+    margin: 2px 0;
+  }
+  .preview {
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    color: #1d1d1f;
+    border-top: 1px solid #d2d2d7;
+    padding-top: 10px;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .scores-table th {
+    text-align: left;
+    color: #86868b;
+    padding: 8px;
+    border-bottom: 1px solid #d2d2d7;
+  }
+  .scores-table td {
+    padding: 8px;
+    border-bottom: 1px solid #e5e5ea;
+  }
+  .truncated-badge {
+    background: #ffd230;
+    color: #1d1d1f;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>PaperScope - Semantic Paper Search</header>
+<div class="container">
+  <div class="left-panel">
+    <h2>Collection</h2>
+    <div class="input-group">
+      <input type="text" id="pdfPath" placeholder="PDF file path">
+      <button class="btn secondary" id="browseBtn">Browse</button>
+    </div>
+    <input type="text" id="paperName" placeholder="Paper name">
+    <button class="btn" id="addBtn">Add Paper</button>
+    <div id="status" class="status">Loading...</div>
+    <button class="btn secondary" id="listBtn">Refresh List</button>
+    <ul id="paperList" style="list-style:none;padding:0;margin:0;flex:1;overflow:auto;">
+    </ul>
+  </div>
+  <div class="right-panel">
+    <div class="card">
+      <h2>Ask a Question</h2>
+      <textarea id="question" placeholder="Type your research question here..."></textarea>
+      <button class="btn" id="askBtn">Ask</button>
+    </div>
+    <div class="card result-card">
+      <h2>Closest Match</h2>
+      <div id="resultHeader" class="result-header hidden">
+        <div>
+          <div class="paper-title" id="resultTitle"></div>
+          <div class="paper-meta" id="resultMeta"></div>
+        </div>
+        <div class="score-badge" id="resultScore"></div>
+      </div>
+      <div id="resultPreview" class="preview hidden"></div>
+    </div>
+    <div class="card">
+      <h2>All Paper Scores</h2>
+      <table class="scores-table" id="scoresTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Score</th>
+            <th>Key</th>
+            <th>Title</th>
+          </tr>
+        </thead>
+        <tbody id="scoresBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+  const API = '/api';
+  const el = id => document.getElementById(id);
+
+  async function fetchJSON(path, method = 'GET', body = null) {
+    const opts = { method, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } };
+    if (body) opts.body = new URLSearchParams(body).toString();
+    const res = await fetch(API + path, opts);
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { return { error: text || res.statusText }; }
+  }
+
+  async function loadStatus() {
+    const data = await fetchJSON('/status');
+    el('status').textContent = `Ready - ${data.paper_count} papers (${data.model})`;
+  }
+
+  async function loadPapers() {
+    const data = await fetchJSON('/papers');
+    const list = el('paperList');
+    list.innerHTML = '';
+    for (const p of data.papers) {
+      const li = document.createElement('li');
+      li.style.padding = '8px';
+      li.style.borderBottom = '1px solid #e5e5ea';
+      li.textContent = `${p.key} — ${p.title}`;
+      if (p.truncated) {
+        const badge = document.createElement('span');
+        badge.className = 'truncated-badge';
+        badge.textContent = 'truncated';
+        li.appendChild(badge);
+      }
+      list.appendChild(li);
+    }
+  }
+
+  async function ask() {
+    const q = el('question').value.trim();
+    if (!q) return;
+    el('askBtn').disabled = true;
+    el('resultHeader').classList.add('hidden');
+    el('resultPreview').classList.add('hidden');
+    el('resultPreview').textContent = '';
+    el('scoresBody').innerHTML = '<tr><td colspan="4">Searching...</td></tr>';
+    const data = await fetchJSON('/ask', 'POST', { question: q });
+    el('askBtn').disabled = false;
+    if (data.error) {
+      el('scoresBody').innerHTML = `<tr><td colspan="4" style="color:#d63232;">Error: ${data.error}</td></tr>`;
+      return;
+    }
+    const top = data.results[0];
+    const header = el('resultHeader');
+    header.classList.remove('hidden');
+    el('resultTitle').textContent = top.title;
+    const meta = [];
+    if (top.year) meta.push(`Year: ${top.year}`);
+    if (top.arxiv_id) meta.push(`arXiv: ${top.arxiv_id}`);
+    meta.push(`Key: ${top.key}`);
+    meta.push(`Pages: ${top.body_pages}/${top.page_count}`);
+    if (top.truncated) meta.push(`Truncated: rate ${top.truncation_rate?.toFixed(4)}`);
+    el('resultMeta').textContent = meta.join('  |  ');
+    el('resultScore').textContent = `Similarity: ${top.score.toFixed(4)}`;
+    el('resultPreview').classList.remove('hidden');
+    el('resultPreview').textContent = top.preview || '(No preview available)';
+
+    const body = el('scoresBody');
+    body.innerHTML = '';
+    for (const r of data.results) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.rank}</td><td>${r.score.toFixed(4)}</td><td>${r.key}</td><td>${r.title}${r.truncated ? ' <span class="truncated-badge">truncated</span>' : ''}</td>`;
+      body.appendChild(tr);
+    }
+  }
+
+  async function addPaper() {
+    const path = el('pdfPath').value.trim();
+    const name = el('paperName').value.trim();
+    if (!path || !name) {
+      alert('Please enter both a PDF path and a paper name.');
+      return;
+    }
+    el('addBtn').disabled = true;
+    const data = await fetchJSON('/add', 'POST', { path, name });
+    el('addBtn').disabled = false;
+    if (data.error) {
+      alert('Error: ' + data.error);
+      return;
+    }
+    el('pdfPath').value = '';
+    el('paperName').value = '';
+    await loadStatus();
+    await loadPapers();
+    alert(data.message || 'Paper added.');
+  }
+
+  async function rebuild() {
+    if (!confirm('Rebuild the entire index from saved collection?')) return;
+    const data = await fetchJSON('/rebuild', 'POST');
+    if (data.error) {
+      alert('Error: ' + data.error);
+      return;
+    }
+    await loadStatus();
+    await loadPapers();
+    alert(data.message || 'Index rebuilt.');
+  }
+
+  el('askBtn').addEventListener('click', ask);
+  el('addBtn').addEventListener('click', addPaper);
+  el('listBtn').addEventListener('click', loadPapers);
+  el('browseBtn').addEventListener('click', () => {
+    alert('Please type or paste the full PDF path into the field above.');
+  });
+
+  loadStatus();
+  loadPapers();
+</script>
+</body>
+</html>

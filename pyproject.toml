@@ -24,6 +24,9 @@ paper-scope = "paper_scope.cli:main"
 [tool.setuptools.packages.find]
 include = ["paper_scope*"]
 
+[tool.setuptools.package-data]
+paper_scope = ["gui_static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

@@ -1,279 +1,226 @@
-"""Graphical user interface for whole-paper semantic search."""
+"""Web-based graphical user interface for whole-paper semantic search."""
 
 from __future__ import annotations
 
+import json
+import socket
 import threading
-import tkinter as tk
+import time
+import webbrowser
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from urllib.parse import parse_qs, urlparse
 
 from .build import add_paper, build_index
 from .config import DEFAULT_MODEL, INDEX_DIR
 from .index_store import IndexError
 from .search import Searcher
 
+STATIC_DIR = Path(__file__).parent / "gui_static"
+HTML_FILE = STATIC_DIR / "index.html"
 
-class PaperScopeGUI:
-    def __init__(self, root: tk.Tk) -> None:
-        self.root = root
-        self.root.title("PaperScope - Semantic Paper Search")
-        self.root.geometry("1100x750")
+_searcher: Searcher | None = None
+_model_name = DEFAULT_MODEL
 
-        self.searcher: Searcher | None = None
-        self.model_name = DEFAULT_MODEL
 
-        self._build_ui()
-        self._load_index_async()
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
 
-    # ------------------------------------------------------------------
-    # User interface layout
-    # ------------------------------------------------------------------
-    def _build_ui(self) -> None:
-        menubar = tk.Menu(self.root)
-        file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Add Paper", command=self._open_add_dialog)
-        file_menu.add_command(label="Rebuild Index", command=self._rebuild_index)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
-        menubar.add_cascade(label="File", menu=file_menu)
-        self.root.config(menu=menubar)
+    def _send_json(self, data: dict, status: int = 200) -> None:
+        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
-        paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
-        paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    def _send_html(self) -> None:
+        if not HTML_FILE.is_file():
+            body = b"<html><body><h1>GUI files not found</h1></body></html>"
+            self.send_response(404)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        body = HTML_FILE.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
-        # Left panel: paper list
-        left = ttk.Frame(paned)
-        paned.add(left, weight=1)
+    def do_GET(self) -> None:
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
 
-        ttk.Label(left, text="Papers in Collection").pack(anchor=tk.W, pady=(0, 5))
-        self.paper_list = tk.Listbox(left)
-        self.paper_list.pack(fill=tk.BOTH, expand=True)
+        if path in ("/", "/index.html"):
+            self._send_html()
+            return
 
-        # Right panel: question and results
-        right = ttk.Frame(paned)
-        paned.add(right, weight=2)
+        if path == "/api/status":
+            count = 0
+            model = _model_name
+            if _searcher is not None:
+                count = _searcher.index.manifest.get("paper_count", 0)
+                model = _searcher.index.model_name
+            self._send_json({"status": "ok", "paper_count": count, "model": model})
+            return
 
-        q_frame = ttk.LabelFrame(right, text="Ask a Question")
-        q_frame.pack(fill=tk.X, pady=(0, 10))
+        if path == "/api/papers":
+            if _searcher is None:
+                self._send_json({"papers": []})
+                return
+            papers = []
+            for paper in _searcher.index.papers:
+                papers.append(
+                    {
+                        "key": paper.get("key", ""),
+                        "title": paper.get("title", ""),
+                        "year": paper.get("year"),
+                        "arxiv_id": paper.get("arxiv_id"),
+                        "truncated": bool(paper.get("truncated", False)),
+                        "truncation_rate": paper.get("truncation_rate"),
+                    }
+                )
+            self._send_json({"papers": papers})
+            return
 
-        self.question_var = tk.StringVar()
-        self.question_entry = ttk.Entry(q_frame, textvariable=self.question_var, font=("Segoe UI", 11))
-        self.question_entry.pack(fill=tk.X, padx=10, pady=10)
-        self.question_entry.bind("<Return>", lambda _e: self._ask_question())
+        self.send_response(404)
+        self.end_headers()
 
-        self.ask_button = ttk.Button(q_frame, text="Ask", command=self._ask_question)
-        self.ask_button.pack(padx=10, pady=(0, 10))
+    def do_POST(self) -> None:
+        global _searcher
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+        data = parse_qs(body.decode("utf-8"))
 
-        close_frame = ttk.LabelFrame(right, text="Closest Match")
-        close_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-        self.close_text = tk.Text(close_frame, height=9, wrap=tk.WORD, font=("Segoe UI", 10))
-        self.close_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self.close_text.config(state=tk.DISABLED)
-
-        scores_frame = ttk.LabelFrame(right, text="All Paper Scores")
-        scores_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-        self.scores_text = tk.Text(scores_frame, height=10, wrap=tk.WORD, font=("Consolas", 9))
-        self.scores_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self.scores_text.config(state=tk.DISABLED)
-
-        self.status_var = tk.StringVar(value="Loading index...")
-        status = ttk.Label(self.root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
-        status.pack(side=tk.BOTTOM, fill=tk.X)
-
-    # ------------------------------------------------------------------
-    # Index lifecycle
-    # ------------------------------------------------------------------
-    def _load_index_async(self) -> None:
-        def work() -> None:
+        if path == "/api/ask":
+            question = data.get("question", [""])[0].strip()
+            if not question:
+                self._send_json({"error": "Question is empty"}, 400)
+                return
+            if _searcher is None:
+                self._send_json({"error": "No index loaded"}, 400)
+                return
             try:
-                self.searcher = Searcher()
-                self.root.after(0, self._index_loaded)
-            except IndexError:
-                self.root.after(0, lambda: self.status_var.set("No index yet. Add a paper to begin."))
-            except Exception as exc:  # noqa: BLE001 - surface startup errors to user.
-                self.root.after(0, lambda e=exc: self.status_var.set(f"Index error: {e}"))
+                hits = _searcher.search_all(question)
+            except Exception as exc:  # noqa: BLE001 - surface search errors.
+                self._send_json({"error": str(exc)}, 400)
+                return
 
-        threading.Thread(target=work, daemon=True).start()
-
-    def _index_loaded(self) -> None:
-        count = self.searcher.index.manifest.get("paper_count", 0) if self.searcher else 0
-        self.status_var.set(f"Ready - {count} papers")
-        self._refresh_list()
-        self.ask_button.config(state=tk.NORMAL)
-
-    def _refresh_list(self) -> None:
-        self.paper_list.delete(0, tk.END)
-        if self.searcher:
-            for paper in self.searcher.index.papers:
-                self.paper_list.insert(tk.END, f"{paper['key']}  -  {paper['title']}")
-
-    # ------------------------------------------------------------------
-    # Add paper
-    # ------------------------------------------------------------------
-    def _open_add_dialog(self) -> None:
-        pdf_path = filedialog.askopenfilename(
-            title="Select a PDF file",
-            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
-        )
-        if not pdf_path:
+            results = []
+            for rank, hit in enumerate(hits, start=1):
+                p = hit.paper
+                text_path = p.get("text_path", "")
+                preview = ""
+                if text_path:
+                    try:
+                        full = Path(text_path).read_text(encoding="utf-8")
+                        preview = full[:1500]
+                        if len(full) > 1500:
+                            preview += "\n... (preview truncated)"
+                    except OSError:
+                        preview = "(Could not load text preview)"
+                results.append(
+                    {
+                        "rank": rank,
+                        "score": round(hit.score, 6),
+                        "key": p["key"],
+                        "title": p["title"],
+                        "year": p.get("year"),
+                        "arxiv_id": p.get("arxiv_id"),
+                        "page_count": p.get("page_count"),
+                        "body_pages": p.get("body_pages"),
+                        "truncated": bool(p.get("truncated", False)),
+                        "truncation_rate": p.get("truncation_rate"),
+                        "preview": preview,
+                    }
+                )
+            self._send_json({"results": results})
             return
 
-        name = filedialog.askstring("Paper Name", "Enter a name for this paper:")
-        if not name:
-            return
+        if path == "/api/add":
+            pdf_path = data.get("path", [""])[0].strip()
+            name = data.get("name", [""])[0].strip()
+            if not pdf_path or not name:
+                self._send_json({"error": "Path and name are required"}, 400)
+                return
 
-        key = Path(pdf_path).stem.replace(" ", "_").replace("-", "_")
-
-        self.status_var.set("Adding paper... this may take a minute.")
-        self.ask_button.config(state=tk.DISABLED)
-
-        def work() -> None:
+            key = Path(pdf_path).stem.replace(" ", "_").replace("-", "_")
             try:
                 manifest = add_paper(
                     key=key,
                     title=name,
                     source_path=Path(pdf_path),
-                    model_name=self.model_name,
+                    model_name=_model_name,
                     index_dir=INDEX_DIR,
                 )
-                self.root.after(0, lambda: self._paper_added(manifest))
-            except Exception as exc:  # noqa: BLE001 - surface add errors to user.
-                self.root.after(0, lambda e=exc: self._fail(f"Failed to add paper: {e}"))
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _paper_added(self, manifest: dict) -> None:
-        self.status_var.set(f"Paper added. Collection now has {manifest['paper_count']} papers.")
-        self.ask_button.config(state=tk.NORMAL)
-        self._refresh_list()
-        messagebox.showinfo(
-            "Paper Added",
-            f"Collection now has {manifest['paper_count']} papers.",
-        )
-
-    # ------------------------------------------------------------------
-    # Rebuild
-    # ------------------------------------------------------------------
-    def _rebuild_index(self) -> None:
-        if not self.searcher:
-            messagebox.showwarning("Warning", "No index to rebuild.")
+                _searcher = Searcher()
+                self._send_json(
+                    {
+                        "ok": True,
+                        "paper_count": manifest["paper_count"],
+                        "message": f"Collection now has {manifest['paper_count']} papers.",
+                    }
+                )
+            except Exception as exc:  # noqa: BLE001 - surface add errors.
+                self._send_json({"error": str(exc)}, 400)
             return
 
-        self.status_var.set("Rebuilding index...")
-        self.ask_button.config(state=tk.DISABLED)
-
-        def work() -> None:
+        if path == "/api/rebuild":
             try:
-                build_index(model_name=self.model_name, index_dir=INDEX_DIR)
-                self.root.after(0, self._rebuilt)
+                build_index(model_name=_model_name, index_dir=INDEX_DIR)
+                _searcher = Searcher()
+                count = _searcher.index.manifest.get("paper_count", 0)
+                self._send_json(
+                    {
+                        "ok": True,
+                        "paper_count": count,
+                        "message": "Index rebuilt.",
+                    }
+                )
             except Exception as exc:  # noqa: BLE001 - surface rebuild errors.
-                self.root.after(0, lambda e=exc: self._fail(f"Rebuild failed: {e}"))
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _rebuilt(self) -> None:
-        try:
-            self.searcher = Searcher()
-            count = self.searcher.index.manifest.get("paper_count", 0)
-            self.status_var.set(f"Index rebuilt - {count} papers")
-            self.ask_button.config(state=tk.NORMAL)
-            self._refresh_list()
-        except Exception as exc:  # noqa: BLE001 - surface reload errors.
-            self._fail(f"Failed to reload index: {exc}")
-
-    # ------------------------------------------------------------------
-    # Ask question
-    # ------------------------------------------------------------------
-    def _ask_question(self) -> None:
-        if not self.searcher:
-            messagebox.showwarning("Warning", "No index loaded. Add papers first.")
+                self._send_json({"error": str(exc)}, 400)
             return
 
-        question = self.question_var.get().strip()
-        if not question:
-            messagebox.showwarning("Warning", "Please enter a question.")
-            return
+        self.send_response(404)
+        self.end_headers()
 
-        self.status_var.set("Searching...")
-        self.ask_button.config(state=tk.DISABLED)
-        self._set_text(self.close_text, "Searching...")
-        self._set_text(self.scores_text, "Searching...")
 
-        def work() -> None:
-            try:
-                hits = self.searcher.search_all(question)
-                self.root.after(0, lambda: self._search_done(hits))
-            except Exception as exc:  # noqa: BLE001 - surface search errors.
-                self.root.after(0, lambda e=exc: self._fail(f"Search failed: {e}"))
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _search_done(self, hits) -> None:
-        count = len(hits)
-        self.status_var.set(f"Search complete - {count} papers ranked.")
-        self.ask_button.config(state=tk.NORMAL)
-
-        top = hits[0]
-        paper = top.paper
-
-        lines = [
-            f"Title: {paper['title']}",
-            f"Key: {paper['key']}",
-            f"Similarity: {top.score:.4f}",
-        ]
-        if paper.get("year"):
-            lines.append(f"Year: {paper['year']}")
-        if paper.get("arxiv_id"):
-            lines.append(f"arXiv: {paper['arxiv_id']}")
-        if paper.get("truncated"):
-            lines.append(
-                f"Truncated: yes (rate {paper.get('truncation_rate', 0):.4f}, "
-                f"tokens {paper.get('token_estimate', 0)})"
-            )
-        lines.append("")
-        lines.append("Text preview:")
-
-        text_path = paper.get("text_path", "")
-        if text_path:
-            try:
-                full = Path(text_path).read_text(encoding="utf-8")
-                preview = full[:1500]
-                lines.append(preview)
-                if len(full) > 1500:
-                    lines.append("\n... (preview truncated)")
-            except OSError:
-                lines.append("(Could not load text preview)")
-        else:
-            lines.append("(No text available)")
-
-        self._set_text(self.close_text, "\n".join(lines))
-
-        # All scores
-        score_lines = [f"{'Rank':<6} {'Score':<8} {'Key':<18} {'Title'}"]
-        score_lines.append("-" * 90)
-        for rank, hit in enumerate(hits, start=1):
-            p = hit.paper
-            score_lines.append(f"{rank:<6} {hit.score:.4f}    {p['key']:<18} {p['title']}")
-        self._set_text(self.scores_text, "\n".join(score_lines))
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-    def _set_text(self, widget: tk.Text, content: str) -> None:
-        widget.config(state=tk.NORMAL)
-        widget.delete("1.0", tk.END)
-        widget.insert("1.0", content)
-        widget.config(state=tk.DISABLED)
-
-    def _fail(self, message: str) -> None:
-        self.status_var.set(message)
-        self.ask_button.config(state=tk.NORMAL)
-        messagebox.showerror("Error", message)
+def _load_index() -> None:
+    global _searcher
+    try:
+        _searcher = Searcher()
+    except IndexError:
+        _searcher = None
 
 
 def launch_gui() -> None:
-    root = tk.Tk()
-    PaperScopeGUI(root)
-    root.mainloop()
+    _load_index()
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    url = f"http://127.0.0.1:{port}/"
+
+    def serve() -> None:
+        server.serve_forever()
+
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+
+    webbrowser.open(url)
+
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.shutdown()
