@@ -12,54 +12,86 @@
   }
 
   :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --text: #0f172a;
-    --muted: #64748b;
-    --border: #e2e8f0;
+    --bg: #0a0a0b;
+    --surface: #141416;
+    --surface-elev: #1c1c1e;
+    --border: #2a2a2c;
+    --border-hover: #3a3a3c;
+    --text: #f2f2f2;
+    --text-muted: #949496;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-glow: rgba(59, 130, 246, 0.3);
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
-    --radius: 12px;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
 
   body {
-    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* Background glow */
+  body::before {
+    content: "";
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200vw;
+    height: 200vh;
+    background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+    z-index: -1;
+    pointer-events: none;
   }
 
   header {
-    background: var(--text);
+    background: var(--surface);
     color: #fff;
     padding: 16px 24px;
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 600;
+    border-bottom: 1px solid var(--border);
     letter-spacing: -0.01em;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  header .logo-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent-glow);
   }
 
   .container {
     display: flex;
-    height: calc(100vh - 52px);
+    height: calc(100vh - 48px);
     gap: 16px;
     padding: 16px;
     overflow: hidden;
   }
 
   .left-panel {
-    flex: 0 0 340px;
-    background: var(--card);
+    flex: 0 0 360px;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
   }
@@ -74,112 +106,184 @@
   }
 
   h2 {
-    font-size: 15px;
-    margin-bottom: 12px;
-    color: var(--text);
+    font-size: 16px;
+    margin-bottom: 14px;
+    color: #fff;
     font-weight: 600;
     letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h2 .icon {
+    color: var(--accent);
   }
 
   .section {
-    background: var(--card);
+    background: var(--surface-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px;
+    padding: 20px;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
   }
 
   .btn {
-    background: var(--primary);
+    background: var(--accent);
     color: #fff;
     border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     width: 100%;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
   }
 
   .btn:hover {
-    background: var(--primary-hover);
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  .btn:active {
+    transform: translateY(0);
   }
 
   .btn:disabled {
-    background: #cbd5e1;
+    background: #333335;
+    color: #888;
     cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
   }
 
   .btn.secondary {
-    background: #f1f5f9;
-    color: var(--text);
+    background: var(--surface-elev);
+    color: #fff;
+    border: 1px solid var(--border);
   }
 
   .btn.secondary:hover {
-    background: #e2e8f0;
+    background: var(--border);
+    border-color: var(--border-hover);
+  }
+
+  .btn-sm {
+    padding: 8px 14px;
+    font-size: 13px;
+    width: auto;
   }
 
   .input-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
 
   .input-row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
   }
 
-  input[type="text"], textarea, input[type="file"] {
+  .file-input-wrapper {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  input[type="text"],
+  textarea,
+  input[type="file"] {
     flex: 1;
-    padding: 10px 12px;
+    padding: 12px 16px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 14px;
     font-family: inherit;
-    background: #fff;
+    background: #0a0a0b;
+    color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
-  input[type="text"]:focus, textarea:focus, input[type="file"]:focus {
+  input[type="text"]:focus,
+  textarea:focus,
+  input[type="file"]:focus {
     outline: none;
-    border-color: var(--primary);
-    ring: 2px solid rgba(37, 99, 235, 0.3);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  input[type="file"] {
+    padding: 8px;
+    font-size: 13px;
+    background: var(--surface-elev);
   }
 
   textarea {
     resize: vertical;
-    min-height: 90px;
+    min-height: 100px;
+    font-family: inherit;
+  }
+
+  textarea::placeholder {
+    color: var(--muted);
   }
 
   .status {
     font-size: 13px;
-    color: var(--muted);
-    background: #f8fafc;
+    color: var(--text-muted);
+    background: var(--surface-elev);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    min-height: 56px;
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    min-height: 64px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .status-item {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .status-value {
+    font-weight: 600;
+    color: #fff;
+    font-family: "SF Mono", "Consolas", monospace;
+    font-size: 13px;
   }
 
   .card {
-    background: var(--card);
+    background: var(--surface-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 24px;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
 
   .result-card {
-    background: var(--card);
+    background: var(--surface-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 24px;
     flex: 0 0 auto;
   }
 
@@ -187,48 +291,53 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
   }
 
   .score-badge {
-    background: var(--primary);
+    background: var(--accent);
     color: #fff;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
     font-weight: 700;
   }
 
   .score-badge.weak {
-    background: var(--warning);
+    background: #f59e0b;
   }
 
   .score-badge.failed {
     background: var(--danger);
   }
 
-  .paper-title {
+  .score-badge strong {
     font-size: 17px;
+  }
+
+  .paper-title {
+    font-size: 18px;
     font-weight: 700;
-    margin: 0 0 6px 0;
-    color: var(--text);
+    margin: 0 0 8px 0;
+    color: #fff;
   }
 
   .paper-meta {
     font-size: 13px;
-    color: var(--muted);
+    color: var(--text-muted);
     margin: 2px 0;
+    line-height: 1.4;
   }
 
   .preview {
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.7;
     white-space: pre-wrap;
-    color: var(--text);
+    color: #e0e0e0;
     border-top: 1px solid var(--border);
-    padding-top: 12px;
-    margin-top: 12px;
-    max-height: 260px;
+    padding-top: 16px;
+    margin-top: 16px;
+    max-height: 220px;
     overflow-y: auto;
   }
 
@@ -241,90 +350,163 @@
 
   .scores-table th {
     text-align: left;
-    color: var(--muted);
+    color: var(--text-muted);
     padding: 10px 8px;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
     font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .scores-table td {
     padding: 10px 8px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .scores-table tr {
+    transition: background 0.15s;
   }
 
   .scores-table tr:hover {
-    background: #f8fafc;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .scores-table tr:last-child td {
+    border-bottom: none;
   }
 
   .rank {
     font-weight: 700;
-    color: var(--muted);
+    color: var(--text-muted);
+    font-family: "SF Mono", "Consolas", monospace;
   }
 
   .truncated-badge {
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 10px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 9px;
     padding: 2px 6px;
     border-radius: 4px;
     margin-left: 6px;
     font-weight: 600;
+    letter-spacing: 0.04em;
   }
 
   .empty-state {
-    color: var(--muted);
+    color: var(--text-muted);
     font-size: 13px;
-    padding: 20px;
+    padding: 24px;
     text-align: center;
+    background: var(--surface-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
   }
 
   .error-banner {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
     font-size: 13px;
+    display: none;
   }
 
   .success-banner {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #166534;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #86efac;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
     font-size: 13px;
+    display: none;
   }
 
   .list-item {
-    padding: 10px 12px;
-    border-radius: 8px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     border: 1px solid transparent;
     margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .list-item:hover {
-    background: #f1f5f9;
-    border-color: var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--border-hover);
   }
 
   .list-item.selected {
-    background: #eff6ff;
-    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent);
   }
 
-  .file-input-wrapper {
+  .list-item-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .list-item-meta {
+    font-size: 12px;
+    color: var(--text-muted);
     display: flex;
-    gap: 8px;
+    gap: 12px;
   }
 
-  input[type="file"] {
-    padding: 6px;
-    font-size: 13px;
+  .list-item-meta span {
+    display: inline-block;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 11, 0.85);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loading-text {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-group .btn {
+    flex: 1;
   }
 
   @media (max-width: 900px) {
@@ -333,32 +515,51 @@
     }
     .left-panel {
       flex: 0 0 auto;
-      max-height: 400px;
+      max-height: none;
+      max-height: 350px;
     }
     .right-panel {
       flex: 1;
     }
   }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 12px;
+      gap: 12px;
+    }
+    .left-panel,
+    .right-panel {
+      max-height: none;
+    }
+  }
 </style>
 </head>
 <body>
-<header>PaperScope - Semantic Paper Search</header>
+<header>
+  <div class="logo-dot"></div>
+  PaperScope - Semantic Paper Search
+</header>
 <div class="container">
   <div class="left-panel">
     <section class="section">
-      <h2>Add Paper</h2>
+      <h2><span class="icon">📄</span> Add Paper</h2>
       <div class="file-input-wrapper">
         <input type="text" id="pdfPath" placeholder="C:\Path\To\paper.pdf" style="flex:1;">
         <input type="file" id="filePicker" accept=".pdf" style="display:none;">
-        <button class="btn secondary" id="browseBtn" style="padding:10px 14px;">Browse</button>
+        <button class="btn secondary btn-sm" id="browseBtn">Browse</button>
       </div>
       <input type="text" id="paperName" placeholder="Paper name">
       <button class="btn" id="addBtn">Add Paper</button>
+      <div id="addBanner" class="success-banner"></div>
     </section>
 
     <section class="section">
-      <h2>Collection</h2>
-      <button class="btn secondary" id="listBtn" style="width:auto; padding:8px 14px; font-size:13px;">Refresh List</button>
+      <h2><span class="icon">📚</span> Collection</h2>
+      <div class="section-header">
+        <span></span>
+        <button class="btn secondary btn-sm" id="listBtn">Refresh List</button>
+      </div>
       <ul id="paperList" style="list-style:none;padding:0;margin:0;">
       </ul>
       <div id="collectionEmpty" class="empty-state" style="margin-top:16px;">No papers yet.</div>
@@ -369,7 +570,10 @@
     <section class="card">
       <h2>Ask a Question</h2>
       <textarea id="question" placeholder="Type your research question here..."></textarea>
-      <button class="btn" id="askBtn">Ask</button>
+      <div class="input-group" style="margin-top: 8px;">
+        <button class="btn" id="askBtn">Ask</button>
+        <button class="btn secondary" id="rebuildBtn" style="width:auto; padding:8px 14px;">Rebuild Index</button>
+      </div>
     </section>
 
     <section class="result-card">
@@ -390,10 +594,10 @@
         <thead>
           <tr>
             <th style="width:50px;">Rank</th>
-            <th style="width:70px;">Score</th>
-            <th style="width:150px;">Key</th>
+            <th style="width:80px;">Score</th>
+            <th style="width:160px;">Key</th>
             <th>Title</th>
-            <th style="width:100px;">Status</th>
+            <th style="width:120px;">Status</th>
           </tr>
         </thead>
         <tbody id="scoresBody">
@@ -406,9 +610,27 @@
   </div>
 </div>
 
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading...</div>
+</div>
+
 <script>
   const API = '/api';
   const el = id => document.getElementById(id);
+  let currentPapers = [];
+  let overlayCount = 0;
+
+  function showLoading(show) {
+    const overlay = el('loadingOverlay');
+    if (show) {
+      overlayCount++;
+      overlay.style.display = 'flex';
+    } else {
+      overlayCount = Math.max(0, overlayCount - 1);
+      if (overlayCount === 0) overlay.style.display = 'none';
+    }
+  }
 
   async function fetchJSON(path, method = 'GET', body = null) {
     const opts = { method, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } };
@@ -421,7 +643,7 @@
   async function loadStatus() {
     const r = await fetchJSON('/status');
     if (r.ok) {
-      el('status').innerHTML = `<span style="font-weight:600;">${r.data.paper_count}</span> papers &bull; Model: ${r.data.model}`;
+      el('status').innerHTML = `<span style="font-weight:600;">${r.data.paper_count}</span> papers • Model: ${r.data.model}`;
     } else {
       el('status').textContent = 'Error loading status.';
     }
@@ -438,7 +660,7 @@
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      currentPapers.forEach((p, idx) => {
+      currentPapers.forEach((p) => {
         const li = document.createElement('li');
         li.className = 'list-item';
         li.style.display = 'flex';
@@ -455,7 +677,7 @@
         }
         const meta = document.createElement('div');
         meta.style.fontSize = '11px';
-        meta.style.color = '#64748b';
+        meta.style.color = '#949496';
         meta.textContent = p.pages ? `${p.body_pages}/${p.page_count} pages` : '';
         li.appendChild(info);
         li.appendChild(meta);
@@ -474,14 +696,23 @@
     el('resultPreview').textContent = '';
     const body = el('scoresBody');
     body.innerHTML = '<tr><td colspan="5" class="empty-state">Searching...</td></tr>';
-    const data = await fetchJSON('/ask', 'POST', { question: q });
-    el('askBtn').disabled = false;
-    el('askBtn').textContent = 'Ask';
-    if (!data.ok) {
-      body.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--danger);">Error: ${data.error}</td></tr>`;
-      return;
+    showLoading(true);
+    try {
+      const data = await fetchJSON('/ask', 'POST', { question: q });
+      el('askBtn').disabled = false;
+      el('askBtn').textContent = 'Ask';
+      if (!data.ok) {
+        body.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:#ef4444;">Error: ${data.error}</td></tr>`;
+        return;
+      }
+      renderResults(data.data.results);
+    } catch (e) {
+      el('askBtn').disabled = false;
+      el('askBtn').textContent = 'Ask';
+      body.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:#ef4444;">Error: ${e.message}</td></tr>`;
+    } finally {
+      showLoading(false);
     }
-    renderResults(r.data.results);
   }
 
   function renderResults(results) {
@@ -507,7 +738,7 @@
     for (const r of results) {
       const tr = document.createElement('tr');
       const status = r.truncated ? '<span class="truncated-badge">truncated</span>' : '';
-      tr.innerHTML = `<td>${r.rank}</td><td>${r.score.toFixed(4)}</td><td>${r.key}</td><td>${r.title}${r.truncated ? ' <span class="truncated-badge">truncated</span>' : ''}</td>`;
+      tr.innerHTML = `<td class="rank">#${r.rank}</td><td>${r.score.toFixed(4)}</td><td>${r.key}</td><td>${r.title}${r.truncated ? ' <span class="truncated-badge">truncated</span>' : ''}</td><td>${status}</td>`;
       tbody.appendChild(tr);
     }
   }
@@ -521,29 +752,45 @@
     }
     el('addBtn').disabled = true;
     el('addBtn').textContent = 'Adding...';
-    const data = await fetchJSON('/add', 'POST', { path, name });
-    el('addBtn').disabled = false;
-    el('addBtn').textContent = 'Add Paper';
-    if (!data.ok) {
-      alert('Error: ' + data.error);
-      return;
+    showLoading(true);
+    try {
+      const data = await fetchJSON('/add', 'POST', { path, name });
+      el('addBtn').disabled = false;
+      el('addBtn').textContent = 'Add Paper';
+      el('pdfPath').value = '';
+      el('paperName').value = '';
+      if (!data.ok) {
+        alert('Error: ' + data.error);
+        return;
+      }
+      await loadStatus();
+      await loadPapers();
+      showToast(data.data.message || 'Paper added.');
+    } catch (e) {
+      el('addBtn').disabled = false;
+      el('addBtn').textContent = 'Add Paper';
+      alert('Error: ' + e.message);
+    } finally {
+      showLoading(false);
     }
-    el('pdfPath').value = '';
-    el('paperName').value = '';
-    await loadStatus();
-    await loadPapers();
-    alert(r.data.message || 'Paper added.');
   }
 
   async function rebuild() {
     if (!confirm('Rebuild the entire index from saved collection? This will re-encode all papers.')) return;
-    const data = await fetchJSON('/rebuild', 'POST');
-    if (data.ok) {
-      await loadStatus();
-      await loadPapers();
-      alert(data.message || 'Index rebuilt.');
-    } else {
-      alert('Error: ' + data.error);
+    showLoading(true);
+    try {
+      const data = await fetchJSON('/rebuild', 'POST');
+      if (data.ok) {
+        await loadStatus();
+        await loadPapers();
+        showToast(data.data.message || 'Index rebuilt.');
+      } else {
+        alert('Error: ' + data.data.error);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      showLoading(false);
     }
   }
 
@@ -554,9 +801,10 @@
   el('filePicker').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Some browsers return a fake path for security. Use the name if no real path.
       el('pdfPath').value = file.path || file.name;
-      if (file.path && file.path.includes('fakepath')) {
-        alert('Your browser returned a fake path for security. Please type or paste the full PDF path manually.');
+      if (!file.path || file.path.includes('fakepath')) {
+        // Don't alert - just let them type it manually or use the name
       }
     }
   });
@@ -564,6 +812,7 @@
   el('askBtn').addEventListener('click', ask);
   el('addBtn').addEventListener('click', addPaper);
   el('listBtn').addEventListener('click', loadPapers);
+  el('rebuildBtn').addEventListener('click', rebuild);
 
   el('question').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

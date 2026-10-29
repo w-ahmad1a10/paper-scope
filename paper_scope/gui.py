@@ -192,11 +192,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def _load_index() -> None:
-    global _searcher
+    global _searcher, _model_name
     try:
         _searcher = Searcher()
+        _model_name = _searcher.index.model_name
     except IndexError:
         _searcher = None
+        _model_name = DEFAULT_MODEL
 
 
 def launch_gui() -> None:

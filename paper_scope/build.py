@@ -13,7 +13,6 @@ from .config import (
     DEFAULT_MAX_TOKENS,
     DEFAULT_MODEL,
     INDEX_DIR,
-    PAPER_RECORDS_FILE,
     SCHEMA_VERSION,
     TEXT_DIR,
 )
@@ -46,8 +45,8 @@ def add_paper(
 
         collection_file = COLLECTION_FILE
 
+    index_dir.mkdir(parents=True, exist_ok=True)
     TEXT_DIR.mkdir(parents=True, exist_ok=True)
-    INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
     local_pdf = copy_pdf(source_path, key)
 
@@ -68,11 +67,12 @@ def add_paper(
     vector = embedder.encode_one(extracted.text)
 
     # Load existing records if present.
+    records_path = index_dir / "papers.jsonl"
     records: list[dict] = []
     vectors: list = []
-    if PAPER_RECORDS_FILE.is_file():
+    if records_path.is_file():
         try:
-            with PAPER_RECORDS_FILE.open("r", encoding="utf-8") as handle:
+            with records_path.open("r", encoding="utf-8") as handle:
                 for line in handle:
                     if line.strip():
                         records.append(json.loads(line))

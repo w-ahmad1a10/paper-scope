@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import fitz
+import numpy as np
 
 import paper_scope.build as build_module
 from paper_scope.build import add_paper
@@ -26,10 +27,15 @@ def _make_minimal_pdf(path: Path, title_text: str = "Test content") -> None:
 
 def _mock_embedder(monkeypatch, dimension: int = 384) -> None:
     """Replace Embedder with a mock that returns deterministic vectors."""
-    import numpy as np
 
     class MockEmbedder:
-        def __init__(self, model_name=None, device=None, batch_size=32, max_tokens=120_000):
+        def __init__(
+            self,
+            model_name: str | None = None,
+            device: str | None = None,
+            batch_size: int = 32,
+            max_tokens: int = 120_000,
+        ):
             self.model_name = model_name or "test-model"
             self.dimension = dimension
             self.max_seq_length = 512
@@ -52,8 +58,6 @@ def _mock_embedder(monkeypatch, dimension: int = 384) -> None:
 
         def estimate_tokens(self, text):
             return max(len(text) // 4, 1)
-
-    import paper_scope.build as build_module
 
     monkeypatch.setattr(build_module, "Embedder", MockEmbedder)
 
@@ -180,6 +184,7 @@ def test_catalog_entry_creation():
 
     # Test asdict round-trip
     from dataclasses import asdict
+
     d = asdict(entry)
     assert d["key"] == "bert"
     assert d["title"] == "BERT Paper"

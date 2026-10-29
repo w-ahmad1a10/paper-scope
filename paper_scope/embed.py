@@ -79,13 +79,20 @@ class Embedder:
                 f"Could not load embedding model '{model_name}': {exc}"
             ) from exc
 
-        self.dimension = int(
-            getattr(
-                self._model,
-                "get_embedding_dimension",
-                self._model.get_sentence_embedding_dimension,
-            )()
+        # Determine actual embedding dimension by encoding a test string,
+        # since get_embedding_dimension() may not match the actual output
+        # for some models (e.g., voyage-4-nano reports 2048 but outputs 1024).
+        test_vec = self._model.encode(
+            ["dimension check"],
+            batch_size=1,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
         )
+        test_matrix = np.asarray(test_vec, dtype=np.float32)
+        if test_matrix.ndim == 1:
+            test_matrix = test_matrix[None, :]
+        self.dimension = int(test_matrix.shape[1])
         self.max_seq_length = int(self._model.max_seq_length)
 
     @property
