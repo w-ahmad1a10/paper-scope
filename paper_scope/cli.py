@@ -83,12 +83,12 @@ def cmd_add(args: argparse.Namespace) -> int:
     """Add a paper from a local PDF file."""
 
     source = Path(args.path)
-    key = args.key
     title = args.title or source.stem
+    key = title.lower().replace(" ", "_").replace("-", "_").replace(".", "_")
+    key = "".join(c for c in key if c.isalnum() or c == "_")
 
     try:
         manifest = add_paper(
-            key=key,
             title=title,
             source_path=source,
             model_name=args.model,
@@ -314,7 +314,6 @@ def build_parser() -> argparse.ArgumentParser:
         "add", help="Add a paper from a local PDF file"
     )
     add.add_argument("path", help="Path to the PDF file")
-    add.add_argument("key", help="Short key/name for the paper")
     add.add_argument(
         "--title", default=None, help="Display title (defaults to filename)"
     )

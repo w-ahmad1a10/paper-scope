@@ -27,7 +27,6 @@ def _now() -> str:
 
 
 def add_paper(
-    key: str,
     title: str,
     source_path: Path,
     *,
@@ -39,6 +38,10 @@ def add_paper(
     printer=print,
 ) -> dict:
     """Add one paper to the collection and append its vector to the index."""
+
+    # Derive key from title automatically
+    key = title.lower().replace(" ", "_").replace("-", "_").replace(".", "_")
+    key = "".join(c for c in key if c.isalnum() or c == "_")
 
     if collection_file is None:
         from .config import COLLECTION_FILE

@@ -16,7 +16,6 @@
     --surface: #141416;
     --surface-elev: #1c1c1e;
     --border: #2a2a2c;
-    --border-hover: #3a3a3c;
     --text: #f2f2f2;
     --text-muted: #949496;
     --accent: #3b82f6;
@@ -28,7 +27,6 @@
     --radius: 14px;
     --radius-sm: 8px;
     --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
     --glass: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.08);
   }
@@ -41,7 +39,6 @@
     overflow-x: hidden;
   }
 
-  /* Background glow */
   body::before {
     content: "";
     position: fixed;
@@ -127,13 +124,6 @@
     padding: 20px;
   }
 
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
   .btn {
     background: var(--accent);
     color: #fff;
@@ -200,7 +190,6 @@
     position: relative;
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
   }
 
   input[type="text"],
@@ -225,12 +214,6 @@
     box-shadow: 0 0 0 3px var(--accent-glow);
   }
 
-  input[type="file"] {
-    padding: 8px;
-    font-size: 13px;
-    background: var(--surface-elev);
-  }
-
   textarea {
     resize: vertical;
     min-height: 100px;
@@ -248,10 +231,10 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 14px;
-    min-height: 64px;
+    min-height: 56px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-direction: column;
   }
 
@@ -276,7 +259,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
   }
 
   .result-card {
@@ -299,7 +282,7 @@
     color: #fff;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
   }
 
@@ -331,7 +314,7 @@
 
   .preview {
     font-size: 13px;
-    line-height: 1.7;
+    line-height: 1.6;
     white-space: pre-wrap;
     color: #e0e0e0;
     border-top: 1px solid var(--border);
@@ -364,10 +347,6 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .scores-table tr {
-    transition: background 0.15s;
-  }
-
   .scores-table tr:hover {
     background: rgba(255, 255, 255, 0.02);
   }
@@ -385,22 +364,18 @@
   .truncated-badge {
     background: #f59e0b;
     color: #fff;
-    font-size: 9px;
+    font-size: 10px;
     padding: 2px 6px;
     border-radius: 4px;
     margin-left: 6px;
     font-weight: 600;
-    letter-spacing: 0.04em;
   }
 
   .empty-state {
     color: var(--text-muted);
     font-size: 13px;
-    padding: 24px;
+    padding: 20px;
     text-align: center;
-    background: var(--surface-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
   }
 
   .error-banner {
@@ -500,13 +475,41 @@
     font-weight: 500;
   }
 
-  .btn-group {
+  .tab-group {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
   }
 
-  .btn-group .btn {
-    flex: 1;
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover {
+    color: var(--accent);
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
   }
 
   @media (max-width: 900px) {
@@ -544,69 +547,85 @@
   <div class="left-panel">
     <section class="section">
       <h2><span class="icon">📄</span> Add Paper</h2>
-      <div class="file-input-wrapper">
-        <input type="text" id="pdfPath" placeholder="C:\Path\To\paper.pdf" style="flex:1;">
-        <input type="file" id="filePicker" accept=".pdf" style="display:none;">
-        <button class="btn secondary btn-sm" id="browseBtn">Browse</button>
-      </div>
-      <input type="text" id="paperName" placeholder="Paper name">
-      <button class="btn" id="addBtn">Add Paper</button>
-      <div id="addBanner" class="success-banner"></div>
-    </section>
-
-    <section class="section">
-      <h2><span class="icon">📚</span> Collection</h2>
-      <div class="section-header">
-        <span></span>
-        <button class="btn secondary btn-sm" id="listBtn">Refresh List</button>
-      </div>
-      <ul id="paperList" style="list-style:none;padding:0;margin:0;">
-      </ul>
-      <div id="collectionEmpty" class="empty-state" style="margin-top:16px;">No papers yet.</div>
-    </section>
-  </div>
-
-  <div class="right-panel">
-    <section class="card">
-      <h2>Ask a Question</h2>
-      <textarea id="question" placeholder="Type your research question here..."></textarea>
-      <div class="input-group" style="margin-top: 8px;">
-        <button class="btn" id="askBtn">Ask</button>
-        <button class="btn secondary" id="rebuildBtn" style="width:auto; padding:8px 14px;">Rebuild Index</button>
-      </div>
-    </section>
-
-    <section class="result-card">
-      <h2>Closest Match</h2>
-      <div id="resultHeader" style="display:none;">
-        <div>
-          <div class="paper-title" id="resultTitle"></div>
-          <div class="paper-meta" id="resultMeta"></div>
+      <div class="input-group">
+        <div class="file-input-wrapper">
+          <input type="text" id="pdfPath" placeholder="C:\Path\To\paper.pdf" style="flex:1;">
+          <input type="file" id="filePicker" accept=".pdf" style="display:none;">
+          <button class="btn secondary btn-sm" id="browseBtn">Browse</button>
         </div>
-        <div class="score-badge" id="resultScore">Similarity: --</div>
-      </div>
-      <div id="resultPreview" class="preview" style="display:none;"></div>
-    </section>
+        <input type="text" id="paperName" placeholder="Paper title">
+        <button class="btn" id="addBtn">Add Paper</button>
+        <div id="addBanner" class="success-banner"></div>
+        <div id="addErrorBanner" class="error-banner"></div>
+      </section>
 
-    <section class="card">
-      <h2>All Paper Scores</h2>
-      <table class="scores-table" id="scoresTable">
-        <thead>
-          <tr>
-            <th style="width:50px;">Rank</th>
-            <th style="width:80px;">Score</th>
-            <th style="width:160px;">Key</th>
-            <th>Title</th>
-            <th style="width:120px;">Status</th>
-          </tr>
-        </thead>
-        <tbody id="scoresBody">
-          <tr>
-            <td colspan="5" class="empty-state">Ask a question to see rankings.</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+      <section class="section">
+        <h2><span class="icon">📚</span> Collection</h2>
+        <div class="section-header">
+          <span></span>
+          <button class="btn secondary btn-sm" id="listBtn">Refresh List</button>
+        </div>
+        <ul id="paperList" style="list-style:none;padding:0;margin:0;">
+        </ul>
+        <div id="collectionEmpty" class="empty-state" style="margin-top:16px;">No papers yet.</div>
+      </section>
+    </div>
+
+    <div class="right-panel">
+      <section class="card">
+        <h2><span class="icon">💬</span> Ask a Question</h2>
+        <div class="tab-group">
+          <button class="tab-btn active" id="tabText">Text Question</button>
+          <button class="tab-btn" id="tabDocument">Document Question</button>
+        </div>
+
+        <div id="tabTextContent" class="tab-content active">
+          <textarea id="question" placeholder="Type your research question here..."></textarea>
+          <button class="btn" id="askBtn">Ask</button>
+        </div>
+
+        <div id="tabDocumentContent" class="tab-content">
+          <div class="file-input-wrapper">
+            <input type="text" id="docPath" placeholder="C:\Path\To\query.pdf" style="flex:1;">
+            <input type="file" id="docFilePicker" accept=".pdf" style="display:none;">
+            <button class="btn secondary btn-sm" id="docBrowseBtn">Browse</button>
+          </div>
+          <button class="btn" id="askDocBtn">Ask with Document</button>
+        </div>
+      </section>
+
+      <section class="result-card">
+        <h2>Closest Match</h2>
+        <div id="resultHeader" style="display:none;">
+          <div>
+            <div class="paper-title" id="resultTitle"></div>
+            <div class="paper-meta" id="resultMeta"></div>
+          </div>
+          <div class="score-badge" id="resultScore">Similarity: --</div>
+        </div>
+        <div id="resultPreview" class="preview" style="display:none;"></div>
+      </section>
+
+      <section class="card">
+        <h2>All Paper Scores</h2>
+        <table class="scores-table" id="scoresTable">
+          <thead>
+            <tr>
+              <th style="width:50px;">Rank</th>
+              <th style="width:80px;">Score</th>
+              <th style="width:160px;">Key</th>
+              <th>Title</th>
+              <th style="width:120px;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="scoresBody">
+            <tr>
+              <td colspan="5" class="empty-state">Ask a question to see rankings.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
   </div>
 </div>
 
@@ -643,7 +662,7 @@
   async function loadStatus() {
     const r = await fetchJSON('/status');
     if (r.ok) {
-      el('status').innerHTML = `<span style="font-weight:600;">${r.data.paper_count}</span> papers • Model: ${r.data.model}`;
+      el('status').innerHTML = `<span style="font-weight:600;">${r.data.paper_count}</span> papers &bull; Model: ${r.data.model}`;
     } else {
       el('status').textContent = 'Error loading status.';
     }
@@ -715,6 +734,38 @@
     }
   }
 
+  async function askDocument() {
+    const path = el('docPath').value.trim();
+    if (!path) {
+      alert('Please enter a PDF path.');
+      return;
+    }
+    el('askDocBtn').disabled = true;
+    el('askDocBtn').textContent = 'Searching...';
+    el('resultHeader').style.display = 'none';
+    el('resultPreview').style.display = 'none';
+    el('resultPreview').textContent = '';
+    const body = el('scoresBody');
+    body.innerHTML = '<tr><td colspan="5" class="empty-state">Searching...</td></tr>';
+    showLoading(true);
+    try {
+      const data = await fetchJSON('/api/ask-document', 'POST', { path: path });
+      el('askDocBtn').disabled = false;
+      el('askDocBtn').textContent = 'Ask with Document';
+      if (!data.ok) {
+        body.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:#ef4444;">Error: ${data.error}</td></tr>`;
+        return;
+      }
+      renderResults(data.data.results);
+    } catch (e) {
+      el('askDocBtn').disabled = false;
+      el('askDocBtn').textContent = 'Ask with Document';
+      body.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:#ef4444;">Error: ${e.message}</td></tr>`;
+    } finally {
+      showLoading(false);
+    }
+  }
+
   function renderResults(results) {
     const top = results[0];
     const header = el('resultHeader');
@@ -724,8 +775,6 @@
     if (top.year) meta.push(`Year: ${top.year}`);
     if (top.arxiv_id) meta.push(`arXiv: ${top.arxiv_id}`);
     meta.push(`Key: ${top.key}`);
-    meta.push(`Pages: ${top.body_pages}/${top.page_count}`);
-    if (top.truncated) meta.push(`Truncated: rate ${(top.truncation_rate || 0).toFixed(4)}`);
     el('resultMeta').textContent = meta.join('  |  ');
     const scoreEl = el('resultScore');
     scoreEl.textContent = `Similarity: ${top.score.toFixed(4)}`;
@@ -794,6 +843,13 @@
     }
   }
 
+  function showToast(msg) {
+    const banner = el('addBanner');
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    setTimeout(() => { banner.style.display = 'none'; }, 3000);
+  }
+
   el('browseBtn').addEventListener('click', () => {
     el('filePicker').click();
   });
@@ -801,10 +857,27 @@
   el('filePicker').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Some browsers return a fake path for security. Use the name if no real path.
       el('pdfPath').value = file.path || file.name;
       if (!file.path || file.path.includes('fakepath')) {
-        // Don't alert - just let them type it manually or use the name
+        el('pdfPath').value = file.name;
+        el('pdfPath').focus();
+        el('pdfPath').select();
+      }
+    }
+  });
+
+  el('docBrowseBtn').addEventListener('click', () => {
+    el('docFilePicker').click();
+  });
+
+  el('docFilePicker').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      el('docPath').value = file.path || file.name;
+      if (!file.path || file.path.includes('fakepath')) {
+        el('docPath').value = file.name;
+        el('docPath').focus();
+        el('docPath').select();
       }
     }
   });
@@ -813,12 +886,40 @@
   el('addBtn').addEventListener('click', addPaper);
   el('listBtn').addEventListener('click', loadPapers);
   el('rebuildBtn').addEventListener('click', rebuild);
+  el('askDocBtn').addEventListener('click', askDocument);
 
   el('question').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       ask();
     }
+  });
+
+  el('docPath').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askDocument();
+    }
+  });
+
+  // Tab switching
+  const tabText = el('tabText');
+  const tabDocument = el('tabDocument');
+  const tabTextContent = el('tabTextContent');
+  const tabDocumentContent = el('tabDocumentContent');
+
+  tabText.addEventListener('click', () => {
+    tabText.classList.add('active');
+    tabDocument.classList.remove('active');
+    tabTextContent.classList.add('active');
+    tabDocumentContent.classList.remove('active');
+  });
+
+  tabDocument.addEventListener('click', () => {
+    tabDocument.classList.add('active');
+    tabText.classList.remove('active');
+    tabDocumentContent.classList.add('active');
+    tabTextContent.classList.remove('active');
   });
 
   loadStatus();

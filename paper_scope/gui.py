@@ -13,6 +13,8 @@ from urllib.parse import parse_qs, urlparse
 
 from .build import add_paper, build_index
 from .config import DEFAULT_MODEL, INDEX_DIR
+from .embed import Embedder
+from .extract import extract_paper
 from .index_store import IndexError
 from .search import Searcher
 
@@ -133,8 +135,6 @@ class Handler(BaseHTTPRequestHandler):
                         "title": p["title"],
                         "year": p.get("year"),
                         "arxiv_id": p.get("arxiv_id"),
-                        "page_count": p.get("page_count"),
-                        "body_pages": p.get("body_pages"),
                         "truncated": bool(p.get("truncated", False)),
                         "truncation_rate": p.get("truncation_rate"),
                         "preview": preview,
@@ -143,6 +143,58 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"results": results})
             return
 
+        if path == "/api/ask-document":
+            pdf_path = data.get("path", [""])[0].strip()
+            if not pdf_path:
+                self._send_json({"error": "PDF path is required"}, 400)
+                return
+            if _searcher is None:
+                self._send_json({"error": "No index loaded"}, 400)
+                return
+            try:
+                pdf_path_obj = Path(pdf_path)
+                if not pdf_path_obj.exists():
+                    self._send_json({"error": f"PDF not found: {pdf_path}"}, 400)
+                    return
+
+                extracted = extract_paper(pdf_path_obj)
+                embedder = Embedder(_model_name)
+                query_vector = embedder.encode_one(extracted.text)
+
+                hits = _searcher.index.all_scores(query_vector)
+
+                results = []
+                for rank, hit in enumerate(hits, start=1):
+                    p = hit.paper
+                    text_path = p.get("text_path", "")
+                    preview = ""
+                    if text_path:
+                        try:
+                            full = Path(text_path).read_text(encoding="utf-8")
+                            preview = full[:1500]
+                            if len(full) > 1500:
+                                preview += "\n... (preview truncated)"
+                        except OSError:
+                            preview = "(Could not load text preview)"
+                    results.append(
+                        {
+                            "rank": rank,
+                            "score": round(hit.score, 6),
+                            "key": p["key"],
+                            "title": p["title"],
+                            "year": p.get("year"),
+                            "arxiv_id": p.get("arxiv_id"),
+                            "truncated": bool(p.get("truncated", False)),
+                            "truncation_rate": p.get("truncation_rate"),
+                            "preview": preview,
+                        }
+                    )
+                self._send_json({"results": results})
+                return
+            except Exception as exc:  # noqa: BLE001 - surface search errors.
+                self._send_json({"error": str(exc)}, 400)
+                return
+
         if path == "/api/add":
             pdf_path = data.get("path", [""])[0].strip()
             name = data.get("name", [""])[0].strip()
@@ -150,10 +202,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": "Path and name are required"}, 400)
                 return
 
-            key = Path(pdf_path).stem.replace(" ", "_").replace("-", "_")
             try:
                 manifest = add_paper(
-                    key=key,
                     title=name,
                     source_path=Path(pdf_path),
                     model_name=_model_name,

@@ -78,7 +78,6 @@ def test_add_paper_writes_records(tmp_path, monkeypatch):
     monkeypatch.setattr(build_module, "TEXT_DIR", text_dir)
 
     manifest = add_paper(
-        key="test_paper",
         title="Test Paper",
         source_path=pdf_path,
         model_name="test-model",
@@ -143,8 +142,7 @@ def test_add_paper_duplicate_key_replaces(tmp_path, monkeypatch):
     monkeypatch.setattr(build_module, "TEXT_DIR", text_dir)
 
     m1 = add_paper(
-        key="same_key",
-        title="First Title",
+        title="Same Title",
         source_path=pdf1,
         index_dir=index_dir,
         collection_file=collection_file,
@@ -152,8 +150,7 @@ def test_add_paper_duplicate_key_replaces(tmp_path, monkeypatch):
     assert m1["paper_count"] == 1
 
     m2 = add_paper(
-        key="same_key",
-        title="Second Title",
+        title="Same Title",
         source_path=pdf2,
         index_dir=index_dir,
         collection_file=collection_file,
@@ -162,7 +159,7 @@ def test_add_paper_duplicate_key_replaces(tmp_path, monkeypatch):
 
     entries = json.loads(collection_file.read_text(encoding="utf-8"))
     assert len(entries) == 1
-    assert entries[0]["title"] == "Second Title"
+    assert entries[0]["title"] == "Same Title"
 
 
 def test_catalog_entry_creation():
