@@ -131,7 +131,7 @@ class Embedder:
             texts = [f"{prefix}{t}" for t in texts]
 
         all_vectors: list[np.ndarray] = []
-        chunk = max(1, min(4, self.batch_size))  # small chunks to avoid OOM
+        chunk = 1  # one at a time to avoid OOM with rotary scaling on T4
         total_chunks = (len(texts) + chunk - 1) // chunk
 
         for chunk_idx, start in enumerate(range(0, len(texts), chunk), start=1):
