@@ -3,10 +3,12 @@
 No arXiv calls. No PDF downloads. Just read text + encode + upload.
 """
 
-import os, time, re
+import os, time, re, sys
 os.system("git clone https://github.com/w-ahmad1a10/paper-scope.git /kaggle/working/repo")
 os.system("pip install -q sentence-transformers huggingface_hub 2>&1 | tail -3")
-os.chdir("/kaggle/working/repo")
+REPO_DIR = "/kaggle/working/repo"
+sys.path.insert(0, REPO_DIR)
+os.chdir(REPO_DIR)
 
 from paper_scope.embed import Embedder
 from paper_scope.config import INDEX_DIR, TEXT_DIR
