@@ -31,4 +31,3 @@ os.system("python comparison/run_method_test.py")
 os.system("python -c \"from huggingface_hub import upload_file; import os; [upload_file(path_or_fileobj=f'comparison/results/{f}', path_in_repo=f'comparison_results/{f}', repo_id='w-ahmad/paper-scope-vectors', repo_type='dataset') for f in os.listdir('comparison/results') if f.endswith('.json')]\"")
 
 print("TESTS_DONE_MARKER")
-"
