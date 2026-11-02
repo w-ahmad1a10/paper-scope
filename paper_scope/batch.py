@@ -85,23 +85,33 @@ def download_by_title(title: str, dirpath: Path = PAPERS_DIR) -> Path:
 
     import arxiv
 
-    client = arxiv.Client()
-    search = arxiv.Search(query=f'ti:"{title}"', max_results=5)
-    results = list(client.results(search))
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            time.sleep(5.0)  # Rate limit: 5s between arXiv requests
+            client = arxiv.Client()
+            search = arxiv.Search(query=f'ti:"{title}"', max_results=5)
+            results = list(client.results(search))
 
-    if not results:
-        raise RuntimeError(f"Paper not found on arXiv: {title}")
+            if not results:
+                raise RuntimeError(f"Paper not found on arXiv: {title}")
 
-    norm = _norm
-    best = next((r for r in results if norm(r.title) == norm(title)), results[0])
+            norm = _norm
+            best = next((r for r in results if norm(r.title) == norm(title)), results[0])
 
-    pdf_url = best.pdf_url
-    urllib.request.urlretrieve(pdf_url, str(target))
+            pdf_url = best.pdf_url
+            urllib.request.urlretrieve(pdf_url, str(target))
 
-    if not is_valid_pdf(target):
-        raise RuntimeError(f"Downloaded file for {title} is not a valid PDF")
+            if not is_valid_pdf(target):
+                raise RuntimeError(f"Downloaded file for {title} is not a valid PDF")
 
-    return target
+            return target
+        except Exception as exc:
+            wait = min(15 * (attempt + 1), 60)
+            print(f"\n  retry {attempt + 1}/{max_retries}: {str(exc)[:80]}")
+            print(f"  waiting {wait}s before retry...")
+            time.sleep(wait)
+    raise RuntimeError(f"Failed to download after {max_retries} attempts: {title}")
 
 
 def batch_add(
