@@ -21,7 +21,7 @@ EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"
 MANIFEST_FILE = INDEX_DIR / "manifest.json"
 
 DEFAULT_MODEL = os.environ.get(
-    "PAPER_SCOPE_MODEL", "nomic-ai/nomic-embed-text-v1.5"
+    "PAPER_SCOPE_MODEL", "Alibaba-NLP/gte-modernbert-base"
 )
 DEFAULT_BATCH_SIZE = 32
 
