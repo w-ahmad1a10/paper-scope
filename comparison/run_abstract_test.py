@@ -85,7 +85,7 @@ def run_abstract_test(
             continue
 
         # Embed abstract as query
-        abstract_vec = embedder.encode_one(abstract, prefix="search_query: ")
+        abstract_vec = embedder.encode_one(abstract)
 
         # Search against ALL papers (including itself)
         hits = index.search_vector(abstract_vec, top_k=len(papers))
