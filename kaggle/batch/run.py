@@ -25,4 +25,3 @@ os.system("python -c \"from huggingface_hub import hf_hub_download; hf_hub_downl
 os.system("python -m paper_scope batch --titles-file titles.txt")
 
 print("PAPERS_DONE_MARKER")
-"
