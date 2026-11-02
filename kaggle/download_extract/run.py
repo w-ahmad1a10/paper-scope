@@ -11,7 +11,7 @@ sys.path.insert(0, REPO_DIR)
 os.chdir(REPO_DIR)
 
 from paper_scope.extract import extract_paper
-from paper_scope.download import download_by_title
+from paper_scope.batch import download_by_title
 from paper_scope.config import PAPERS_DIR, TEXT_DIR
 from huggingface_hub import HfApi, hf_hub_download, upload_file
 
