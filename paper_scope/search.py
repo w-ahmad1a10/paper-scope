@@ -25,7 +25,7 @@ class Searcher:
             raise ValueError("The question is empty")
 
         encode_start = time.perf_counter()
-        query_vector = self.embedder.encode_one(query, prefix="search_query: ")
+        query_vector = self.embedder.encode_one(query, )
         self.last_encode_time = time.perf_counter() - encode_start
 
         compare_start = time.perf_counter()
@@ -42,7 +42,7 @@ class Searcher:
             raise ValueError("The question is empty")
 
         encode_start = time.perf_counter()
-        query_vector = self.embedder.encode_one(query, prefix="search_query: ")
+        query_vector = self.embedder.encode_one(query, )
         self.last_encode_time = time.perf_counter() - encode_start
 
         compare_start = time.perf_counter()
