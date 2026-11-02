@@ -26,8 +26,8 @@ All code lives on GitHub. When I (the agent) make edits:
 3. I commit directly to GitHub via GitHub API
 4. GitHub is updated immediately
 
-**IMPORTANT: Only MCP GitHub tools are used for all GitHub operations.**
-**The GitHub REST API is NEVER used directly. All reads, writes, commits, and deletions go through MCP tools.**
+**IMPORTANT: All GitHub operations use the GitHub REST API directly.**
+**All reads, writes, commits, and deletions go through the GitHub REST API directly.**CP tools.**
 
 ### 2. Kaggle Execution
 Kaggle kernels are thin wrappers that:
@@ -126,9 +126,9 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 ## How to Make Changes
 
 ### For the Agent (AI) — GITHUB API
-1. Read file from GitHub via GitHub API (mcp__github__get_file_contents or github_file_read)
+1. Read file from GitHub via REST API (GET /repos/{owner}/{repo}/contents/{path})
 2. Edit content in memory
-3. Commit directly to GitHub via GitHub API (mcp__github__create_or_update_file or mcp__github__push_files)
+3. Commit directly to GitHub via REST API (PUT /repos/{owner}/{repo}/contents/{path})_files)
 4. GitHub is updated immediately
 
 **RULE: All GitHub operations use the GitHub REST API directly.**
