@@ -26,3 +26,7 @@ Thumbs.db
 
 # Local environment overrides
 .env
+
+# Watcher
+watcher.log
+watcher.lock

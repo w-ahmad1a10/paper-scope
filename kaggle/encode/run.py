@@ -50,7 +50,7 @@ for t in titles:
 print(f'Loaded {len(papers)} papers with text')
 
 # Encode
-embedder = Embedder('nomic-ai/nomic-embed-text-v1.5', batch_size=1, max_tokens=120000)
+embedder = Embedder('Alibaba-NLP/gte-modernbert-base', batch_size=1, max_tokens=120000)
 
 records = []
 vectors = []
@@ -60,7 +60,7 @@ for i, paper in enumerate(papers, 1):
     truncated = token_est > embedder.max_seq_length
     trunc_rate = (token_est - embedder.max_seq_length) / token_est if truncated and token_est > 0 else 0.0
 
-    vec = embedder.encode_one(text, prefix='search_document: ')
+    vec = embedder.encode_one(text)
     vectors.append(vec)
 
     records.append({
@@ -117,7 +117,7 @@ import datetime
 manifest = {
     'schema_version': 2,
     'built_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-    'model_name': 'nomic-ai/nomic-embed-text-v1.5',
+    'model_name': 'Alibaba-NLP/gte-modernbert-base',
     'dimension': matrix.shape[1],
     'max_seq_length': embedder.max_seq_length,
     'normalized': True,

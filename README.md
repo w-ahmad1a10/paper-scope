@@ -58,7 +58,7 @@ project-local model cache if those paths cannot be created.
 
 ## Embedding model
 
-The default model is `nomic-ai/nomic-embed-text-v1.5`, downloaded from Hugging Face. It is
+The default model is `Alibaba-NLP/gte-modernbert-base`, downloaded from Hugging Face. It is
 used to embed each whole paper into one vector. The model must have a context window
 large enough for whole papers (8192 tokens). If a paper exceeds the model's context
 limit, the end of the paper is cut off and the truncation rate is reported.
@@ -139,7 +139,14 @@ For large collections (100+ papers), use Kaggle GPU to download and encode:
 5. Sync to local: `.\.venv\Scripts\python.exe -m paper_scope hf-sync <hf-repo>`
 
 The kernel downloads PDFs from arXiv, extracts text with PyMuPDF, encodes with
-nomic-embed-text-v1.5 on GPU in fp16, and uploads vectors to Hugging Face.
+Alibaba-NLP/gte-modernbert-base on GPU in fp16, and uploads vectors to Hugging Face.
+
+## Working copy and watcher
+
+This machine keeps a full working copy of the code. All edits happen in that
+local copy. A background watcher checks for changes every 10 seconds and sends
+them to the online code site. Start the watcher once by running the start file.
+If the watcher is not running, local changes stay only on this machine.
 
 ## Project layout
 

@@ -137,7 +137,7 @@ def run_method_test(
     output_dir: Path = Path("comparison/results"),
     pdf_dir: Path = Path("comparison/pdfs"),
     method_dir: Path = Path("comparison/method_texts"),
-    model_name: str = "nomic-ai/nomic-embed-text-v1.5",
+    model_name: str = "Alibaba-NLP/gte-modernbert-base",
     top_k: int = 10,
 ) -> dict:
     """Run the method-as-query test and save results."""

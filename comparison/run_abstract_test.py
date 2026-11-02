@@ -52,7 +52,7 @@ def fetch_abstract(title: str) -> str | None:
 def run_abstract_test(
     index_dir: Path = INDEX_DIR,
     output_dir: Path = Path("comparison/results"),
-    model_name: str = "nomic-ai/nomic-embed-text-v1.5",
+    model_name: str = "Alibaba-NLP/gte-modernbert-base",
     top_k: int = 10,
 ) -> dict:
     """Run the abstract-as-query test and save results."""

@@ -20,7 +20,7 @@ from .embed import Embedder, EmbeddingError
 def embed_papers(
     papers: list[dict[str, Any]],
     *,
-    model_name: str = "nomic-ai/nomic-embed-text-v1.5",
+    model_name: str = "Alibaba-NLP/gte-modernbert-base",
     batch_size: int = 32,
     max_tokens: int = 120_000,
     max_seq_length: int = 8192,
@@ -96,7 +96,7 @@ def build_manifest(
     records: list[dict[str, Any]],
     vectors: np.ndarray,
     *,
-    model_name: str = "nomic-ai/nomic-embed-text-v1.5",
+    model_name: str = "Alibaba-NLP/gte-modernbert-base",
     max_seq_length: int = 8192,
     max_tokens: int = 120_000,
 ) -> dict[str, Any]:

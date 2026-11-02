@@ -86,10 +86,9 @@ class Embedder:
 
         # Determine actual embedding dimension by encoding a test string,
         # since get_embedding_dimension() may not match the actual output
-        # for some models (e.g., nomic-embed-text reports a nominal size that
-        # differs from the real output width).
+        # for some models.
         test_vec = self._model.encode(
-            ["search_document: dimension check"],
+            ["dimension check"],
             batch_size=1,
             show_progress_bar=False,
             convert_to_numpy=True,
@@ -130,7 +129,7 @@ class Embedder:
             texts = [f"{prefix}{t}" for t in texts]
 
         all_vectors: list[np.ndarray] = []
-        chunk = 1  # one at a time to avoid OOM with rotary scaling on T4
+        chunk = 1  # one at a time to avoid OOM on T4
         total_chunks = (len(texts) + chunk - 1) // chunk
 
         for chunk_idx, start in enumerate(range(0, len(texts), chunk), start=1):

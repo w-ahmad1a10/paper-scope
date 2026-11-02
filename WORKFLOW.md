@@ -7,31 +7,33 @@ PaperScope is a local semantic search tool over AI research papers. It turns who
 ## Architecture
 
 ```
-GitHub (code)  →  Kaggle (compute)  →  Hugging Face (storage)
+This computer (local copy)  →  Online code site  →  Kaggle (compute)  →  Hugging Face (storage)
      │                    │                      │
      │                    │                      │
   Source of truth    GPU/CPU execution      Vectors + results
 ```
 
-- **GitHub**: Single source of truth for all code
+- **This computer**: Working copy of all code. All edits happen here.
+- **Online code site**: Source of truth for code. Updated by the watcher.
 - **Kaggle**: Execution environment (GPU for heavy tasks, CPU for tests)
 - **Hugging Face**: Storage for vectors, results, and paper titles
 
 ## How It Works
 
 ### 1. Code Changes
-All code lives on GitHub. When I (the agent) make edits:
-1. I read the file from GitHub via GitHub API
-2. I edit the content
-3. I commit directly to GitHub via GitHub API
-4. GitHub is updated immediately
+All code lives in a working copy on this computer. When I (the agent) make edits:
+1. I read and edit files in the local working copy.
+2. The watcher checks for changes every 10 seconds.
+3. If the local copy has changes, the watcher sends them to the online code site.
+4. The online code site is updated by the watcher.
 
-**IMPORTANT: All GitHub operations use the GitHub REST API directly.**
-**All reads, writes, commits, and deletions go through the GitHub REST API directly.**
+**IMPORTANT: Edits happen in the local working copy only.**
+**The watcher is the only path from this computer to the online code site.**
+**The watcher never brings changes from the online code site down to this computer.**
 
 ### 2. Kaggle Execution
 Kaggle kernels are thin wrappers that:
-1. Clone the latest code from GitHub
+1. Clone the latest code from the online code site
 2. Install dependencies
 3. Run the appropriate command
 4. Upload results to Hugging Face
@@ -103,10 +105,8 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 ## Key Design Decisions
 
 ### 1. Embedding Model
-- **Model**: `nomic-ai/nomic-embed-text-v1.5`
+- **Model**: `Alibaba-NLP/gte-modernbert-base`
 - **Precision**: float32 (not float16)
-- **Trust remote code**: True (required for rotary scaling)
-- **Rotary scaling**: `rotary_scaling_factor=2` (extends 2048 → 8192 tokens)
 - **Max sequence length**: 8192 tokens
 
 ### 2. Vector Storage
@@ -125,31 +125,33 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 
 ## How to Make Changes
 
-### For the Agent (AI) — GITHUB API
-1. Read file from GitHub via REST API (GET /repos/{owner}/{repo}/contents/{path})
-2. Edit content in memory
-3. Commit directly to GitHub via REST API (PUT /repos/{owner}/{repo}/contents/{path})
-4. GitHub is updated immediately
+### For the Agent (AI) — LOCAL WORKING COPY
+1. Read and edit files in the local working copy.
+2. The watcher sends local changes to the online code site every 10 seconds.
+3. The online code site is updated by the watcher.
 
-**RULE: All GitHub operations use the GitHub REST API directly.**
+**RULE: All edits happen in the local working copy.**
+**RULE: The watcher is the only path to the online code site.**
+**RULE: The watcher never brings changes from the online code site down.**
 
 ### For the User (Manual)
-1. Edit on GitHub web (press `.` for VS Code in browser)
-2. Or ask the agent to make changes
+1. Edit files in the local working copy.
+2. The watcher sends the changes to the online code site.
+3. Or ask the agent to make changes.
 
 ### For Kaggle
-1. Re-run the relevant kernel
-2. Kernel auto-clones latest code from GitHub
-3. No manual code copying needed
+1. Re-run the relevant kernel.
+2. Kernel auto-clones latest code from the online code site.
+3. No manual code copying needed.
 
 ## Important Notes
 
-- **No local repo**: All code lives on GitHub
+- **Local working copy**: All code lives on this computer. The watcher keeps the online code site in sync.
+- **Watcher always on**: The watcher runs every 10 seconds and sends local changes to the online code site.
 - **No GitHub Actions**: Tests run on Kaggle CPU
 - **Append-only vectors**: Never delete existing vectors, only add new ones
 - **Temporary files**: PDFs and extracted text are temporary (deleted after processing)
 - **HF as source of truth**: Vectors and results are on Hugging Face
-- **GitHub API only**: All GitHub operations use the GitHub REST API directly
 
 ## Repository Structure
 
@@ -171,6 +173,8 @@ paper-scope/ (GitHub)
 ├── kaggle/               # Thin Kaggle wrappers
 │   ├── batch/            # GPU kernel
 │   └── tests/            # CPU kernel
+├── git_watcher.py         # Watches local changes and sends them to the online code site
+├── run_watcher.cmd        # Starts the watcher in the background
 ├── 100papers.txt         # Paper titles
 ├── NOMIC_VARIANTS_COMPARISON.md
 ├── WORKFLOW.md           # This file
