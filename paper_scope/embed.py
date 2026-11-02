@@ -77,8 +77,7 @@ class Embedder:
             self._model = SentenceTransformer(
                 model_name,
                 device=device,
-                trust_remote_code=True,
-                model_kwargs={"torch_dtype": torch.float32, "rotary_scaling_factor": 2},
+                model_kwargs={"torch_dtype": torch.float32},
             )
         except Exception as exc:
             raise EmbeddingError(
