@@ -25,7 +25,7 @@ def embed_papers(
     max_tokens: int = 120_000,
     max_seq_length: int = 8192,
     device: str | None = None,
-    prefix: str = "search_document: ",
+    prefix: str = "",
     printer=print,
 ) -> tuple[np.ndarray, list[dict[str, Any]]]:
     """Embed a list of papers into vectors.
@@ -48,8 +48,8 @@ def embed_papers(
         max_tokens=max_tokens,
     )
 
-    # Prefix all texts
-    texts_to_encode = [f"{prefix}{p['text']}" for p in papers]
+    # No prefix needed for gte-modernbert-base
+    texts_to_encode = [p['text'] for p in papers]
 
     # Encode in batches
     printer(f"Encoding {len(texts_to_encode)} papers (batch_size={batch_size})...")
