@@ -21,9 +21,9 @@ GitHub (code)  →  Kaggle (compute)  →  Hugging Face (storage)
 
 ### 1. Code Changes
 All code lives on GitHub. When I (the agent) make edits:
-1. I read the file from GitHub via MCP tools
+1. I read the file from GitHub via GitHub API
 2. I edit the content
-3. I commit directly to GitHub via MCP tools
+3. I commit directly to GitHub via GitHub API
 4. GitHub is updated immediately
 
 **IMPORTANT: Only MCP GitHub tools are used for all GitHub operations.**
@@ -125,13 +125,13 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 
 ## How to Make Changes
 
-### For the Agent (AI) — MCP TOOLS ONLY
-1. Read file from GitHub via MCP tools (mcp__github__get_file_contents or github_file_read)
+### For the Agent (AI) — GITHUB API
+1. Read file from GitHub via GitHub API (mcp__github__get_file_contents or github_file_read)
 2. Edit content in memory
-3. Commit directly to GitHub via MCP tools (mcp__github__create_or_update_file or mcp__github__push_files)
+3. Commit directly to GitHub via GitHub API (mcp__github__create_or_update_file or mcp__github__push_files)
 4. GitHub is updated immediately
 
-**RULE: Never use the GitHub REST API directly. All GitHub operations go through MCP tools only.**
+**RULE: All GitHub operations use the GitHub REST API directly.**
 
 ### For the User (Manual)
 1. Edit on GitHub web (press `.` for VS Code in browser)
@@ -149,7 +149,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 - **Append-only vectors**: Never delete existing vectors, only add new ones
 - **Temporary files**: PDFs and extracted text are temporary (deleted after processing)
 - **HF as source of truth**: Vectors and results are on Hugging Face
-- **MCP tools only**: All GitHub operations use MCP tools, never the REST API
+- **GitHub API only**: All GitHub operations use the GitHub REST API directly
 
 ## Repository Structure
 
