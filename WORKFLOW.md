@@ -77,7 +77,7 @@ The kernel will:
 2. Download titles.txt from HF
 3. Download PDFs from arXiv
 4. Extract text
-5. Encode vectors (with rotary scaling, float32)
+5. Encode vectors (float32)
 6. Merge with existing HF index (append-only, never overwrites)
 7. Upload merged index to HF
 
@@ -158,7 +158,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 ```
 paper-scope/ (GitHub)
 ├── paper_scope/          # Main package
-│   ├── embed.py          # float32, trust_remote_code, rotary=2
+│   ├── embed.py          # float32
 │   ├── pipeline.py       # Standalone embedding
 │   ├── batch.py          # Batch processing
 │   ├── build.py          # Add papers
