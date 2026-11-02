@@ -68,7 +68,7 @@ def add_paper(
         else 0.0
     )
 
-    vector = embedder.encode_one(extracted.text, prefix="search_document: ")
+    vector = embedder.encode_one(extracted.text)
 
     # Load existing records if present.
     records_path = index_dir / "papers.jsonl"
@@ -203,7 +203,7 @@ def build_index(
             else 0.0
         )
 
-        vector = embedder.encode_one(extracted.text, prefix="search_document: ")
+        vector = embedder.encode_one(extracted.text)
 
         record = {
             "key": entry.key,
