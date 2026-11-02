@@ -203,7 +203,7 @@ def run_method_test(
             method_text = " ".join(words[:2000])
 
         # Embed method as query
-        method_vec = embedder.encode_one(method_text, prefix="search_query: ")
+        method_vec = embedder.encode_one(method_text)
 
         # Search against ALL papers
         hits = index.search_vector(method_vec, top_k=len(papers))
