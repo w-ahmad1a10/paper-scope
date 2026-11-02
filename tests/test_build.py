@@ -43,7 +43,7 @@ def _mock_embedder(monkeypatch, dimension: int = 384) -> None:
             self.batch_size = batch_size
             self.max_tokens = max_tokens
 
-        def encode_one(self, text):
+        def encode_one(self, text, prefix=""):
             # Deterministic vector based on text hash
             import hashlib
 

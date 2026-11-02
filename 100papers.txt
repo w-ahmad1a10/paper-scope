@@ -1,0 +1,100 @@
+1. DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning
+2. Gemini 2.5: Pushing the Frontier with Advanced Reasoning, Multimodality, Long Context, and Next Generation Agentic Capabilities
+3. s1: Simple test-time scaling
+4. Gemma 3 Technical Report
+5. Kimi k1.5: Scaling Reinforcement Learning with LLMs
+6. YOLOv12: Attention-Centric Real-Time Object Detectors
+7. Understanding R1-Zero-Like Training: A Critical Perspective
+8. Search-R1: Training LLMs to Reason and Leverage Search Engines with Reinforcement Learning
+9. Future progress in artificial intelligence: A survey of expert opinion
+10. Janus-Pro: Unified Multimodal Understanding and Generation with Data and Model Scaling
+11. Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?
+12. SFT Memorizes, RL Generalizes: A Comparative Study of Foundation Model Post-training
+13. A Review of Pseudospectral Optimal Control: From Theory to Flight
+14. SigLIP 2: Multilingual Vision-Language Encoders with Improved Semantic Understanding, Localization, and Dense Features
+15. GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
+16. Cosmos World Foundation Model Platform for Physical AI
+17. Vision-R1: Incentivizing Reasoning Capability in Multimodal Large Language Models
+18. LIMO: Less is More for Reasoning
+19. SimpleRL-Zoo: Investigating and Taming Zero Reinforcement Learning for Open Base Models in the Wild
+20. On-line Policy Improvement using Monte-Carlo Search
+21. Search-o1: Agentic Search-Enhanced Large Reasoning Models
+22. Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs
+23. The Lessons of Developing Process Reward Models in Mathematical Reasoning
+24. Humanity's Last Exam
+25. A Mutual Learning Method for Salient Object Detection with intertwined Multi-Supervision--Revised
+26. UI-TARS: Pioneering Automated GUI Interaction with Native Agents
+27. Process Reinforcement through Implicit Rewards
+28. Multi-Agent Collaboration Mechanisms: A Survey of LLMs
+29. L1: Controlling How Long A Reasoning Model Thinks With Reinforcement Learning
+30. Towards Reasoning Era: A Survey of Long Chain-of-Thought for Reasoning Large Language Models
+31. gpt-oss-120b & gpt-oss-20b Model Card
+32. Clustering-based Anomaly Detection in Multivariate Time Series Data
+33. Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success
+34. Beyond the 80/20 Rule: High-Entropy Minority Tokens Drive Effective Reinforcement Learning for LLM Reasoning
+35. The Illusion of Thinking: Understanding the Strengths and Limitations of Reasoning Models via the Lens of Problem Complexity
+36. The Entropy Mechanism of Reinforcement Learning for Reasoning Language Models
+37. R1-VL: Learning to Reason with Multimodal Large Language Models via Step-wise Group Relative Policy Optimization
+38. Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention
+39. SpatialVLA: Exploring Spatial Representations for Visual-Language-Action Model
+40. Towards Large Reasoning Models: A Survey of Reinforced Reasoning with Large Language Models
+41. CoT-VLA: Visual Chain-of-Thought Reasoning for Vision-Language-Action Models
+42. LMM-R1: Empowering 3B LMMs with Strong Reasoning Abilities Through Two-Stage Rule-Based RL
+43. AlphaEvolve: A coding agent for scientific and algorithmic discovery
+44. ReTool: Reinforcement Learning for Strategic Tool Use in LLMs
+45. From System 1 to System 2: A Survey of Reasoning Large Language Models
+46. Reasoning Models Don't Always Say What They Think
+47. Agent Laboratory: Using LLM Agents as Research Assistants
+48. Why Do Multi-Agent LLM Systems Fail?
+49. Logic-RL: Unleashing LLM Reasoning with Rule-Based Reinforcement Learning
+50. R1-Searcher: Incentivizing the Search Capability in LLMs via Reinforcement Learning
+51. Limits of trust in medical AI
+52. Group Sequence Policy Optimization
+53. Fast3R: Towards 3D Reconstruction of 1000+ Images in One Forward Pass
+54. VL-Rethinker: Incentivizing Self-Reflection of Vision-Language Models with Reinforcement Learning
+55. Reinforcement Learning for Reasoning in Large Language Models with One Training Example
+56. Towards an AI co-scientist
+57. Seed1.5-VL Technical Report
+58. OmniGen2: Exploration to Advanced Multimodal Generation
+59. Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions
+60. Flow-GRPO: Training Flow Matching Models via Online RL
+61. WebThinker: Empowering Large Reasoning Models with Deep Research Capability
+62. Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG
+63. BLIP3-o: A Family of Fully Open Unified Multimodal Models-Architecture, Training and Dataset
+64. Inference-Time Scaling for Generalist Reward Modeling
+65. VAPO: Efficient and Reliable Reinforcement Learning for Advanced Reasoning Tasks
+66. ToolRL: Reward is All Tool Learning Needs
+67. AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges
+68. Multivariate Time series Anomaly Detection:A Framework of Hidden Markov Models
+69. Block Diffusion: Interpolating Between Autoregressive and Diffusion Language Models
+70. Your Brain on ChatGPT: Accumulation of Cognitive Debt when Using an AI Assistant for Essay Writing Task
+71. TokenSkip: Controllable Chain-of-Thought Compression in LLMs
+72. DeepResearcher: Scaling Deep Research via Reinforcement Learning in Real-world Environments
+73. Monitoring Reasoning Models for Misbehavior and the Risks of Promoting Obfuscation
+74. R1-Zero's "Aha Moment" in Visual Reasoning on a 2B Non-SFT Model
+75. SWE-RL: Advancing LLM Reasoning via Reinforcement Learning on Open Software Evolution
+76. V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning
+77. CoT-Valve: Length-Compressible Chain-of-Thought Tuning
+78. DAST: Difficulty-Adaptive Slow-Thinking for Large Reasoning Models
+79. Small Language Models are the Future of Agentic AI
+80. Kimi-Audio Technical Report
+81. FlashInfer: Efficient and Customizable Attention Engine for LLM Inference Serving
+82. RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning
+83. DeepSeek-Prover-V2: Advancing Formal Mathematical Reasoning via Reinforcement Learning for Subgoal Decomposition
+84. Reasoning Models Can Be Effective Without Thinking
+85. Absolute Zero: Reinforced Self-play Reasoning with Zero Data
+86. When More is Less: Understanding Chain-of-Thought Length in LLMs
+87. SmolVLM: Redefining small and efficient multimodal models
+88. LLMs Can Easily Learn to Reason from Demonstrations Structure, not content, is what matters!
+89. Hi Robot: Open-Ended Instruction Following with Hierarchical Vision-Language-Action Models
+90. The Danger of Overthinking: Examining the Reasoning-Action Dilemma in Agentic Tasks
+91. Spurious Rewards: Rethinking Training Signals in RLVR
+92. Muon is Scalable for LLM Training
+93. ASAP: Aligning Simulation and Real-World Physics for Learning Agile Humanoid Whole-Body Skills
+94. Emergent Misalignment: Narrow finetuning can produce broadly misaligned LLMs
+95. MedVLM-R1: Incentivizing Medical Reasoning Capability of Vision-Language Models (VLMs) via Reinforcement Learning
+96. Layer by Layer: Uncovering Hidden Representations in Language Models
+97. Learning to Reason under Off-Policy Guidance
+98. AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders
+99. Can We Generate Images with CoT? Let's Verify and Reinforce Image Generation Step by Step
+100. Improving Video Generation with Human Feedback

@@ -5,13 +5,16 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import textwrap
 import traceback
 from pathlib import Path
 
+from .batch import batch_add
 from .build import add_paper, build_index
 from .config import DEFAULT_MAX_TOKENS, DEFAULT_MODEL, INDEX_DIR, WEAK_MATCH_SCORE
+from .sync import sync_from_hf
 from .download import DownloadError
 from .embed import EmbeddingError
 from .extract import ExtractionError
@@ -29,7 +32,6 @@ def _print_paper_hit(hit: SearchHit, rank: int = 1, show_text: bool = False) -> 
     if paper.get("arxiv_id"):
         print(f"arXiv: {paper['arxiv_id']}")
     print(f"Key: {paper['key']}")
-    print(f"Pages: {paper.get('body_pages', 0)}/{paper.get('page_count', 0)}")
     if paper.get("truncated"):
         print(
             f"Truncated: yes (rate {paper.get('truncation_rate', 0):.4f}, "
@@ -83,7 +85,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     """Add a paper from a local PDF file."""
 
     source = Path(args.path)
-    title = args.title or source.stem
+    title = args.name or source.stem
     key = title.lower().replace(" ", "_").replace("-", "_").replace(".", "_")
     key = "".join(c for c in key if c.isalnum() or c == "_")
 
@@ -150,6 +152,12 @@ def cmd_search(args: argparse.Namespace) -> int:
 
     for rank, hit in enumerate(hits, start=1):
         _print_paper_hit(hit, rank, show_text=True)
+    print()
+    print(
+        f"Search time: encode {searcher.last_encode_time:.3f}s "
+        f"| compare {searcher.last_compare_time:.3f}s "
+        f"| total {searcher.last_total_time:.3f}s"
+    )
     return 0
 
 
@@ -182,6 +190,135 @@ def cmd_search_all(args: argparse.Namespace) -> int:
         return 0
 
     _print_all_scores(hits)
+    print()
+    print(
+        f"Search time: encode {searcher.last_encode_time:.3f}s "
+        f"| compare {searcher.last_compare_time:.3f}s "
+        f"| total {searcher.last_total_time:.3f}s"
+    )
+    return 0
+
+
+def cmd_batch(args: argparse.Namespace) -> int:
+    """Download many papers by title and build the index in one pass."""
+
+    titles = []
+    if getattr(args, "titles", None):
+        titles = [t.strip() for t in args.titles.split(",") if t.strip()]
+    if getattr(args, "titles_file", None):
+        from pathlib import Path
+        import re
+        p = Path(args.titles_file)
+        if p.is_file():
+            titles = [t.strip() for t in p.read_text(encoding="utf-8").splitlines() if t.strip()]
+            titles = [re.sub(r"^\\d+\\.\\s*", "", t) for t in titles]
+            titles = [t for t in titles if t]
+    if not titles:
+        print("Error: no titles provided", file=sys.stderr)
+        return 1
+
+    try:
+        manifest = batch_add(
+            titles,
+            model_name=args.model,
+            batch_size=args.batch_size,
+            max_tokens=args.max_tokens,
+            index_dir=INDEX_DIR,
+        )
+    except Exception as exc:  # noqa: BLE001 - surface batch errors.
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"Index now has {manifest['paper_count']} papers.")
+    return 0
+
+
+def cmd_kaggle_run(args: argparse.Namespace) -> int:
+    """Prepare and push a Kaggle kernel for batch processing."""
+
+    import os
+    import shutil
+    import subprocess
+    import time
+
+    kaggle_token = os.environ.get("KAGGLE_API_TOKEN")
+    if not kaggle_token:
+        print(
+            "Error: KAGGLE_API_TOKEN environment variable is required.",
+            file=sys.stderr,
+        )
+        print(
+            "Set it with: $env:KAGGLE_API_TOKEN = 'your_token'",
+            file=sys.stderr,
+        )
+        return 1
+
+    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
+    hf_repo = args.hf_repo or os.environ.get("HF_REPO", "w-ahmad/paper-scope-vectors")
+
+    # Prepare kernel package directory
+    kernel_dir = Path(__file__).parent.parent / "kaggle"
+    if not kernel_dir.is_dir():
+        print("Error: kaggle/ directory not found.", file=sys.stderr)
+        print(f"  Expected at: {kernel_dir}", file=sys.stderr)
+        return 1
+
+    # Get titles from comma-separated arg
+    titles = []
+    if args.titles:
+        titles = [t.strip() for t in args.titles.split(",") if t.strip()]
+    if not titles and args.titles_file and Path(args.titles_file).is_file():
+        titles = [
+            t.strip() for t in Path(args.titles_file).read_text(encoding="utf-8").splitlines() if t.strip()
+        ]
+        titles = [re.sub(r"^\d+\.\s*", "", t) for t in titles]
+        titles = [t for t in titles if t]
+
+    if not titles:
+        print("Error: no titles provided.", file=sys.stderr)
+        return 1
+
+    print(f"Pushing {len(titles)} paper(s) to Kaggle GPU")
+    for t in titles:
+        print(f"  - {t}")
+
+    # Set env vars for the kaggle process (and the kernel itself)
+    env = os.environ.copy()
+    env["KAGGLE_API_TOKEN"] = kaggle_token
+    env["HF_TOKEN"] = hf_token or ""
+    env["HF_REPO"] = hf_repo
+    env["PAPER_TITLES"] = ",".join(titles)
+def cmd_sync(args: argparse.Namespace) -> int:
+    """Sync vectors from Hugging Face to local index."""
+
+    import os
+
+    repo_id = args.repo
+    token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
+
+    if not token:
+        print(
+            "Error: HF_TOKEN environment variable is required.",
+            file=sys.stderr,
+        )
+        print(
+            "Set it with: $env:HF_TOKEN = 'your_token'",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        manifest = sync_from_hf(
+            repo_id=repo_id,
+            token=token,
+            index_dir=INDEX_DIR,
+            printer=print,
+        )
+    except Exception as exc:  # noqa: BLE001 - surface sync errors.
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"Index now has {manifest['paper_count']} papers.")
     return 0
 
 
@@ -259,6 +396,11 @@ def cmd_ask(args: argparse.Namespace) -> int:
             print("Closest match details above. Here are all paper scores:")
             _print_all_scores(hits)
             print()
+            print(
+                f"Search time: encode {searcher.last_encode_time:.3f}s "
+                f"| compare {searcher.last_compare_time:.3f}s "
+                f"| total {searcher.last_total_time:.3f}s"
+            )
         elif command == "add":
             add_parts = rest.split(None, 1)
             if len(add_parts) < 2:
@@ -266,15 +408,13 @@ def cmd_ask(args: argparse.Namespace) -> int:
                 continue
             pdf_path = Path(add_parts[0])
             name = add_parts[1]
-            key = add_parts[0].split("/")[-1].replace(".pdf", "").replace("\\", "-")
             try:
                 manifest = add_paper(
-                    key=key,
                     title=name,
                     source_path=pdf_path,
-                    model_name=args.model if hasattr(args, "model") else DEFAULT_MODEL,
-                    batch_size=args.batch_size if hasattr(args, "batch_size") else 32,
-                    max_tokens=args.max_tokens if hasattr(args, "max_tokens") else 120_000,
+                    model_name=DEFAULT_MODEL,
+                    batch_size=32,
+                    max_tokens=DEFAULT_MAX_TOKENS,
                     index_dir=INDEX_DIR,
                 )
                 # Reload searcher to include new paper.
@@ -305,7 +445,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="paper-scope",
         description=(
             "Whole-paper semantic search over AI research papers. "
-            "Run without a command for an interactive question screen."
+            "Run without a command to see the available commands."
         ),
     )
     subparsers = parser.add_subparsers(dest="command")
@@ -315,7 +455,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add.add_argument("path", help="Path to the PDF file")
     add.add_argument(
-        "--title", default=None, help="Display title (defaults to filename)"
+        "name", nargs="?", default=None, help="Display title (defaults to filename)"
     )
     add.add_argument(
         "--model", default=DEFAULT_MODEL, help="Embedding model to use"
@@ -343,6 +483,55 @@ def build_parser() -> argparse.ArgumentParser:
         help="Max tokens per paper (default: 120000)"
     )
     build.set_defaults(func=cmd_build)
+
+    batch = subparsers.add_parser(
+        "batch", help="Download many papers by title and build the index in one pass"
+    )
+    batch.add_argument(
+        "titles", nargs="?", default=None,
+        help="Comma-separated list of paper titles to download from arXiv",
+    )
+    batch.add_argument(
+        "--titles-file", default=None,
+        help="Path to a file with one paper title per line",
+    )
+    batch.add_argument(
+        "--model", default=DEFAULT_MODEL, help="Embedding model to use"
+    )
+    batch.add_argument(
+        "--batch-size", type=int, default=32, help="Batch size (default: 32)"
+    )
+    batch.add_argument(
+        "--max-tokens", type=int, default=DEFAULT_MAX_TOKENS,
+        help="Max tokens per paper (default: 120000)"
+    )
+    batch.set_defaults(func=cmd_batch)
+
+    kaggle_run = subparsers.add_parser(
+        "kaggle-run", help="Prepare and push a Kaggle kernel for batch processing"
+    )
+    kaggle_run.add_argument(
+        "titles", nargs="?", default=None,
+        help="Comma-separated list of paper titles (or use --titles-file)",
+    )
+    kaggle_run.add_argument(
+        "--titles-file", default=None,
+        help="Path to a file with one title per line",
+    )
+    kaggle_run.add_argument(
+        "--hf-repo", default=None,
+        help="Hugging Face repo name (default: w-ahmad/paper-scope-vectors)",
+    )
+    kaggle_run.set_defaults(func=cmd_kaggle_run)
+
+    hf_sync = subparsers.add_parser(
+        "hf-sync", help="Sync vectors from Hugging Face to local index"
+    )
+    hf_sync.add_argument(
+        "repo", nargs="?", default="w-ahmad/paper-scope-vectors",
+        help="Hugging Face repo name (default: w-ahmad/paper-scope-vectors)",
+    )
+    hf_sync.set_defaults(func=cmd_sync)
 
     search = subparsers.add_parser("search", help="Search the saved index once")
     search.add_argument("query", help="Question or topic to search for")
@@ -377,9 +566,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not getattr(args, "command", None):
-        from .gui import launch_gui
-
-        launch_gui()
+        parser.print_help()
         return 0
 
     try:

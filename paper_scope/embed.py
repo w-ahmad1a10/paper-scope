@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+import torch
 
 from .config import CACHE_DIR, DEFAULT_BATCH_SIZE, DEFAULT_MAX_TOKENS, DEFAULT_MODEL
 
@@ -73,7 +74,12 @@ class Embedder:
         self.batch_size = batch_size
         self.max_tokens = max_tokens
         try:
-            self._model = SentenceTransformer(model_name, device=device)
+            self._model = SentenceTransformer(
+                model_name,
+                device=device,
+                trust_remote_code=True,
+                model_kwargs={"torch_dtype": torch.float32, "rotary_scaling_factor": 2},
+            )
         except Exception as exc:
             raise EmbeddingError(
                 f"Could not load embedding model '{model_name}': {exc}"
@@ -81,9 +87,10 @@ class Embedder:
 
         # Determine actual embedding dimension by encoding a test string,
         # since get_embedding_dimension() may not match the actual output
-        # for some models (e.g., voyage-4-nano reports 2048 but outputs 1024).
+        # for some models (e.g., nomic-embed-text reports a nominal size that
+        # differs from the real output width).
         test_vec = self._model.encode(
-            ["dimension check"],
+            ["search_document: dimension check"],
             batch_size=1,
             show_progress_bar=False,
             convert_to_numpy=True,
@@ -99,38 +106,75 @@ class Embedder:
     def device(self) -> str:
         return str(self._model.device)
 
-    def encode_one(self, text: str) -> np.ndarray:
-        """Encode one whole document and return its vector."""
+    def encode_one(self, text: str, prefix: str = "") -> np.ndarray:
+        """Encode one whole document and return its vector.
 
-        try:
-            vectors = self._model.encode(
-                [text],
-                batch_size=self.batch_size,
-                show_progress_bar=False,
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-                truncate_dim=self.dimension,
-            )
-        except TypeError:
-            # Older sentence-transformers versions may not accept truncate_dim.
-            vectors = self._model.encode(
-                [text],
-                batch_size=self.batch_size,
-                show_progress_bar=False,
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-            )
+        If prefix is given (e.g. "search_document: " or "search_query: "),
+        it is prepended to the text before encoding, as required by the model.
+        """
 
-        matrix = np.asarray(vectors, dtype=np.float32)
-        if matrix.ndim == 1:
-            matrix = matrix[None, :]
+        if prefix:
+            text = f"{prefix}{text}"
+        vectors = self.encode_one_batch([text], prefix="")
+        return np.ascontiguousarray(vectors)[0]
+
+    def encode_one_batch(self, texts: list[str], prefix: str = "") -> np.ndarray:
+        """Encode many whole documents in small batches to avoid memory exhaustion.
+
+        If prefix is given (e.g. "search_document: "), it is prepended to
+        every text before encoding, as required by the model.
+
+        Returns a 2-D array of shape (len(texts), dimension).
+        """
+
+        if prefix:
+            texts = [f"{prefix}{t}" for t in texts]
+
+        all_vectors: list[np.ndarray] = []
+        chunk = max(1, min(4, self.batch_size))  # small chunks to avoid OOM
+        total_chunks = (len(texts) + chunk - 1) // chunk
+
+        for chunk_idx, start in enumerate(range(0, len(texts), chunk), start=1):
+            piece = texts[start : start + chunk]
+            print(
+                f"  Encoding chunk {chunk_idx}/{total_chunks} "
+                f"({len(piece)} texts, {start + len(piece)}/{len(texts)} done)",
+                flush=True,
+            )
+            try:
+                vectors = self._model.encode(
+                    piece,
+                    batch_size=chunk,
+                    show_progress_bar=False,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,
+                    truncate_dim=self.dimension,
+                )
+            except TypeError:
+                vectors = self._model.encode(
+                    piece,
+                    batch_size=chunk,
+                    show_progress_bar=False,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,
+                )
+
+            matrix = np.asarray(vectors, dtype=np.float32)
+            if matrix.ndim == 1:
+                matrix = matrix[None, :]
+            all_vectors.append(matrix)
+
+        if not all_vectors:
+            raise EmbeddingError("No vectors produced")
+
+        matrix = np.concatenate(all_vectors, axis=0)
         if matrix.shape[1] != self.dimension:
             raise EmbeddingError(
                 f"Unexpected embedding shape {matrix.shape}; expected (*, {self.dimension})"
             )
         if not np.isfinite(matrix).all():
             raise EmbeddingError("Embedding model produced non-finite values")
-        return np.ascontiguousarray(matrix)[0]
+        return np.ascontiguousarray(matrix)
 
     def estimate_tokens(self, text: str) -> int:
         """Estimate token count using the model tokenizer when available."""

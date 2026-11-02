@@ -18,6 +18,7 @@ from .config import (
 )
 from .download import copy_pdf
 from .embed import Embedder
+from .pipeline import embed_papers, build_manifest
 from .extract import extract_paper
 from .index_store import save_index
 
@@ -67,7 +68,7 @@ def add_paper(
         else 0.0
     )
 
-    vector = embedder.encode_one(extracted.text)
+    vector = embedder.encode_one(extracted.text, prefix="search_document: ")
 
     # Load existing records if present.
     records_path = index_dir / "papers.jsonl"
@@ -145,8 +146,7 @@ def add_paper(
     )
 
     printer(
-        f"Added {key:11s} | pages {extracted.body_pages:2d}/{extracted.page_count:2d} "
-        f"| tokens {token_estimate:6d} | truncated {truncated} | "
+        f"Added {key:11s} | tokens {token_estimate:6d} | truncated {truncated} | "
         f"rate {truncation_rate:.4f}"
     )
     return manifest
@@ -203,7 +203,7 @@ def build_index(
             else 0.0
         )
 
-        vector = embedder.encode_one(extracted.text)
+        vector = embedder.encode_one(extracted.text, prefix="search_document: ")
 
         record = {
             "key": entry.key,
@@ -224,8 +224,7 @@ def build_index(
         vectors.append(vector)
 
         printer(
-            f"             {extracted.body_pages:2d}/{extracted.page_count:2d} pages "
-            f"| tokens {token_estimate:6d} | truncated {truncated} | "
+            f"             tokens {token_estimate:6d} | truncated {truncated} | "
             f"rate {truncation_rate:.4f}"
         )
 

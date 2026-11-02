@@ -21,7 +21,7 @@ EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"
 MANIFEST_FILE = INDEX_DIR / "manifest.json"
 
 DEFAULT_MODEL = os.environ.get(
-    "PAPER_SCOPE_MODEL", "voyageai/voyage-4-nano"
+    "PAPER_SCOPE_MODEL", "nomic-ai/nomic-embed-text-v1.5"
 )
 DEFAULT_BATCH_SIZE = 32
 

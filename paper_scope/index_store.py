@@ -75,7 +75,7 @@ class SemanticIndex:
         self.vectors = np.ascontiguousarray(matrix)
         self.manifest = dict(manifest)
         self.model_name = str(
-            self.manifest.get("model_name", "voyageai/voyage-4-nano")
+            self.manifest.get("model_name", "nomic-ai/nomic-embed-text-v1.5")
         )
         self.dimension = int(self.manifest.get("dimension", matrix.shape[1]))
         if self.vectors.shape[1] != self.dimension:
