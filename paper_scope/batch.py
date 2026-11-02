@@ -233,7 +233,7 @@ def batch_add(
     printer("")
 
     encode_start = time.perf_counter()
-    vectors = embedder.encode_one_batch(texts, prefix="search_document: ")
+    vectors = embedder.encode_one_batch(texts)
     encode_elapsed = time.perf_counter() - encode_start
 
     printer(f"Encoding finished in {encode_elapsed:.1f}s")
