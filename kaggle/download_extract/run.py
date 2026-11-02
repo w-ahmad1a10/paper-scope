@@ -3,10 +3,12 @@
 No GPU needed. No model loading. Just I/O.
 """
 
-import os, time, re
+import os, time, re, sys
 os.system("git clone https://github.com/w-ahmad1a10/paper-scope.git /kaggle/working/repo")
 os.system("pip install -q arxiv huggingface_hub PyMuPDF 2>&1 | tail -3")
-os.chdir("/kaggle/working/repo")
+REPO_DIR = "/kaggle/working/repo"
+sys.path.insert(0, REPO_DIR)
+os.chdir(REPO_DIR)
 
 from paper_scope.extract import extract_paper
 from paper_scope.download import download_by_title
