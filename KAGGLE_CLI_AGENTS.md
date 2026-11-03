@@ -71,7 +71,28 @@ Configuration values from C:\Users\<you>\.kaggle
 
 ### Hugging Face uploads are separate
 
-Kaggle authentication does not give access to Hugging Face. Any kernel that uploads to Hugging Face must get its Hugging Face token from Kaggle secrets under the name HF_TOKEN, using the Kaggle secrets client. Never hardcode the token and never put it in a repository file.
+Kaggle authentication does not give access to Hugging Face. Any kernel that uploads to Hugging Face reads the token from a private Kaggle dataset that contains a text file with the token. The dataset is attached via `dataset_sources` in `kernel-metadata.json` and mounted under `/kaggle/input/`. The code reads the token from that mounted file. Never hardcode the token and never put it in a repository file.
+
+#### Private dataset workaround for Hugging Face tokens
+
+1. Create a local folder, e.g. `secret-folder/`.
+2. Inside it, create `hf_token.txt` containing only your Hugging Face write token.
+3. Upload it as a private dataset:
+   ```powershell
+   kaggle datasets create -p ./secret-folder --private
+   ```
+   Note the dataset slug printed by Kaggle, e.g. `deep-research-1a10/hf-token-store`.
+4. Attach that dataset in `kernel-metadata.json`:
+   ```json
+   "dataset_sources": ["deep-research-1a10/hf-token-store"]
+   ```
+5. In your Python code, read the token from the mounted path:
+   ```python
+   with open("/kaggle/input/hf-token-store/hf_token.txt") as f:
+       HF_TOKEN = f.read().strip()
+   ```
+6. Datasets persist across pushes, so you do not need to reattach them when you push new kernel versions.
+
 
 ### Rules that matter
 
