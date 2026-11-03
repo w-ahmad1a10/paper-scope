@@ -143,6 +143,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 1. Re-run the relevant kernel.
 2. Kernel auto-clones latest code from the online code site.
 3. No manual code copying needed.
+- Kaggle kernels are single-use. After a run finishes or is cancelled, create a new kernel rather than pushing again to the same slug.
 
 ## Important Notes
 

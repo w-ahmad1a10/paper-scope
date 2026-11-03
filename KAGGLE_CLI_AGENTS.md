@@ -209,6 +209,7 @@ Useful flags:
 Notes:
 
 - **Re-pushing the same `id` creates version N+1** — the previous version's outputs stay intact under that version number, which makes A/B comparisons easy.
+- Kernels are single-use. Once a run completes or is cancelled, create a new kernel slug for the next run instead of reusing the same slug.
 - A warning like `The following are not valid tags and could not be added` is **cosmetic**; the run still proceeds. Only an error mentioning `id`, auth, or metadata is fatal.
 - GPU runs may require a **phone-verified** Kaggle account. If a GPU push fails with a 403/permission message rather than a queue message, that is usually the cause — retry without `--accelerator`, or verify the phone on the site.
 

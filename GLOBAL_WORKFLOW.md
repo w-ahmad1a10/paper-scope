@@ -66,6 +66,7 @@ This guide describes a reusable way of working that can be used by any repositor
 - Re-run the relevant job.
 - It downloads the latest code from the online code site.
 - No manual copying is needed.
+- Kaggle kernels are single-use. After a run finishes or is cancelled, create a new kernel rather than pushing again to the same slug.
 
 ## Important notes
 
