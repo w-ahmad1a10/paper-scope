@@ -20,7 +20,7 @@ LOCK_FILE = ROOT / "watcher.lock"
 LOG_FILE = ROOT / "watcher.log"
 BRANCH = "main"
 REMOTE = "origin"
-INTERVAL_SECONDS = 10
+INTERVAL_SECONDS = 60
 
 
 def log(message: str) -> None:

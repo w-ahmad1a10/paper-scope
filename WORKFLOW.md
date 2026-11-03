@@ -23,7 +23,7 @@ This computer (local copy)  →  Online code site  →  Kaggle (compute)  →  H
 ### 1. Code Changes
 All code lives in a working copy on this computer. When I (the agent) make edits:
 1. I read and edit files in the local working copy.
-2. The watcher checks for changes every 10 seconds.
+2. The watcher checks for changes every 1 minute.
 3. If the local copy has changes, the watcher sends them to the online code site.
 4. The online code site is updated by the watcher.
 
@@ -127,7 +127,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 
 ### For the Agent (AI) — LOCAL WORKING COPY
 1. Read and edit files in the local working copy.
-2. The watcher sends local changes to the online code site every 10 seconds.
+2. The watcher sends local changes to the online code site every 1 minute.
 3. The online code site is updated by the watcher.
 
 **RULE: All edits happen in the local working copy.**
@@ -147,7 +147,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 ## Important Notes
 
 - **Local working copy**: All code lives on this computer. The watcher keeps the online code site in sync.
-- **Watcher always on**: The watcher runs every 10 seconds and sends local changes to the online code site.
+- **Watcher always on**: The watcher runs every 1 minute and sends local changes to the online code site.
 - **No GitHub Actions**: Tests run on Kaggle CPU
 - **Append-only vectors**: Never delete existing vectors, only add new ones
 - **Temporary files**: PDFs and extracted text are temporary (deleted after processing)

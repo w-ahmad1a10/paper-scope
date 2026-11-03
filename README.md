@@ -144,7 +144,7 @@ Alibaba-NLP/gte-modernbert-base on GPU in fp16, and uploads vectors to Hugging F
 ## Working copy and watcher
 
 This machine keeps a full working copy of the code. All edits happen in that
-local copy. A background watcher checks for changes every 10 seconds and sends
+local copy. A background watcher checks for changes every 1 minute and sends
 them to the online code site. Start the watcher once by running the start file.
 If the watcher is not running, local changes stay only on this machine.
 
