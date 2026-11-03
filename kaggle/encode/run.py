@@ -133,7 +133,7 @@ print(f'Saved {len(merged_records)} vectors, shape={matrix.shape}')
 
 # Upload to HF
 token = None
-dataset_token_path = "/kaggle/input/hf-token-store/hf_token.txt"
+dataset_token_path = "/kaggle/input/datasets/deepresearch1a10/hf-token-store/hf_token.txt"
 if os.path.isfile(dataset_token_path):
     try:
         with open(dataset_token_path, "r", encoding="utf-8") as handle:

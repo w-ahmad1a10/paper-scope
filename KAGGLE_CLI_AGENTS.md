@@ -88,7 +88,7 @@ Kaggle authentication does not give access to Hugging Face. Any kernel that uplo
    ```
 5. In your Python code, read the token from the mounted path:
    ```python
-   with open("/kaggle/input/hf-token-store/hf_token.txt") as f:
+   with open("/kaggle/input/datasets/deepresearch1a10/hf-token-store/hf_token.txt") as f:
        HF_TOKEN = f.read().strip()
    ```
 6. Datasets persist across pushes, so you do not need to reattach them when you push new kernel versions.
