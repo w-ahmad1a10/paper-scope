@@ -1,6 +1,7 @@
 import os
 
-path = "/kaggle/input/hf-token-store/hf_token.txt"
+path = "/kaggle/input/datasets/deepresearch1a10/hf-token-store/hf_token.txt"
+print("checking:", path)
 if os.path.isfile(path):
     with open(path, "r", encoding="utf-8") as f:
         token = f.read().strip()
