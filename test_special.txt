@@ -1,4 +1,0 @@
-import os
-os.environ['HF_TOKEN'] = 'hf_test'
-print("hello")
-x = "test 'quotes' and \\backslash"
