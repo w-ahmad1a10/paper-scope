@@ -132,11 +132,19 @@ with open(INDEX_DIR / 'manifest.json', 'w', encoding='utf-8') as f:
 print(f'Saved {len(merged_records)} vectors, shape={matrix.shape}')
 
 # Upload to HF
+token = None
 try:
     from kaggle_secrets import UserSecretsClient
-    token = UserSecretsClient().get_secret("HF_TOKEN")
-except Exception:
-    token = os.environ.get('HF_TOKEN')
+    usc = UserSecretsClient()
+    token = usc.get_secret("HF_TOKEN")
+    print("HF token loaded from Kaggle secret, length:", len(token) if token else 0)
+except Exception as exc:
+    print("Could not load HF token from Kaggle secret:", repr(exc))
+    token = os.environ.get("HF_TOKEN")
+    if token:
+        print("HF token loaded from environment, length:", len(token))
+    else:
+        print("No HF token found")
 api = HfApi(token=token)
 api.create_repo(repo_id='w-ahmad/paper-scope-vectors', repo_type='dataset', exist_ok=True)
 for fname in ['embeddings.npy', 'papers.jsonl', 'manifest.json']:
