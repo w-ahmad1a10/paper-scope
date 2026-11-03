@@ -75,6 +75,7 @@ This guide describes a reusable way of working that can be used by any repositor
 - Execution environment always gets code from the online code site.
 - Storage site is the source of truth for large files and results.
 - Upload of results to the storage site is mandatory.
+- Storage site uploads need a storage token: execution environments that upload to the storage site must read the token from their secret manager under the agreed name.
 - If the watcher is not running, local changes stay local.
 - If both sides change at once, the watcher stops and asks for help.
 

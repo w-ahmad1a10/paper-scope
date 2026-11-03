@@ -69,6 +69,10 @@ Configuration values from C:\Users\<you>\.kaggle
 
 `auth_method: ACCESS_TOKEN` means the token was picked up. If you instead get *"Authentication required to call the Kaggle API"*, the variable is wrong, empty, or not visible to the child process.
 
+### Hugging Face uploads are separate
+
+Kaggle authentication does not give access to Hugging Face. Any kernel that uploads to Hugging Face must get its Hugging Face token from Kaggle secrets under the name HF_TOKEN, using the Kaggle secrets client. Never hardcode the token and never put it in a repository file.
+
 ### Rules that matter
 
 1. **Set the variable in the same shell invocation as the command.** Sandboxes, containers, and `pwsh -Command` calls frequently start a fresh process per command, so an `export` from a previous call may not survive.

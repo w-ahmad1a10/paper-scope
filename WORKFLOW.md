@@ -146,6 +146,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 
 ## Important Notes
 
+- **HF uploads need a Hugging Face token**: Kernels that upload to Hugging Face must read the token from Kaggle secrets under the name HF_TOKEN.
 - **Local working copy**: All code lives on this computer. The watcher keeps the online code site in sync.
 - **Watcher always on**: The watcher runs every 1 minute and sends local changes to the online code site.
 - **No GitHub Actions**: Tests run on Kaggle CPU
