@@ -133,13 +133,15 @@ print(f'Saved {len(merged_records)} vectors, shape={matrix.shape}')
 
 # Upload to HF
 token = None
-try:
-    from kaggle_secrets import UserSecretsClient
-    usc = UserSecretsClient()
-    token = usc.get_secret("HF_TOKEN")
-    print("HF token loaded from Kaggle secret, length:", len(token) if token else 0)
-except Exception as exc:
-    print("Could not load HF token from Kaggle secret:", repr(exc))
+dataset_token_path = "/kaggle/input/hf-token-store/hf_token.txt"
+if os.path.isfile(dataset_token_path):
+    try:
+        with open(dataset_token_path, "r", encoding="utf-8") as handle:
+            token = handle.read().strip()
+        print("HF token loaded from private dataset, length:", len(token) if token else 0)
+    except Exception as exc:
+        print("Could not read HF token from private dataset:", repr(exc))
+if not token:
     token = os.environ.get("HF_TOKEN")
     if token:
         print("HF token loaded from environment, length:", len(token))
