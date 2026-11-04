@@ -1,0 +1,390 @@
+[
+  {
+    "key": "gemini_2_5_pushing_the_frontier_with_advanced_reasoning_multimodality_long_context_and_next_generation_agentic_capabilities",
+    "title": "Gemini 2.5: Pushing the Frontier with Advanced Reasoning, Multimodality, Long Context, and Next Generation Agentic Capabilities"
+  },
+  {
+    "key": "s1_simple_test_time_scaling",
+    "title": "s1: Simple test-time scaling"
+  },
+  {
+    "key": "gemma_3_technical_report",
+    "title": "Gemma 3 Technical Report"
+  },
+  {
+    "key": "kimi_k1_5_scaling_reinforcement_learning_with_llms",
+    "title": "Kimi k1.5: Scaling Reinforcement Learning with LLMs"
+  },
+  {
+    "key": "yolov12_attention_centric_real_time_object_detectors",
+    "title": "YOLOv12: Attention-Centric Real-Time Object Detectors"
+  },
+  {
+    "key": "understanding_r1_zero_like_training_a_critical_perspective",
+    "title": "Understanding R1-Zero-Like Training: A Critical Perspective"
+  },
+  {
+    "key": "search_r1_training_llms_to_reason_and_leverage_search_engines_with_reinforcement_learning",
+    "title": "Search-R1: Training LLMs to Reason and Leverage Search Engines with Reinforcement Learning"
+  },
+  {
+    "key": "future_progress_in_artificial_intelligence_a_survey_of_expert_opinion",
+    "title": "Future progress in artificial intelligence: A survey of expert opinion"
+  },
+  {
+    "key": "janus_pro_unified_multimodal_understanding_and_generation_with_data_and_model_scaling",
+    "title": "Janus-Pro: Unified Multimodal Understanding and Generation with Data and Model Scaling"
+  },
+  {
+    "key": "does_reinforcement_learning_really_incentivize_reasoning_capacity_in_llms_beyond_the_base_model",
+    "title": "Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?"
+  },
+  {
+    "key": "sft_memorizes_rl_generalizes_a_comparative_study_of_foundation_model_post_training",
+    "title": "SFT Memorizes, RL Generalizes: A Comparative Study of Foundation Model Post-training"
+  },
+  {
+    "key": "a_review_of_pseudospectral_optimal_control_from_theory_to_flight",
+    "title": "A Review of Pseudospectral Optimal Control: From Theory to Flight"
+  },
+  {
+    "key": "siglip_2_multilingual_vision_language_encoders_with_improved_semantic_understanding_localization_and_dense_features",
+    "title": "SigLIP 2: Multilingual Vision-Language Encoders with Improved Semantic Understanding, Localization, and Dense Features"
+  },
+  {
+    "key": "gr00t_n1_an_open_foundation_model_for_generalist_humanoid_robots",
+    "title": "GR00T N1: An Open Foundation Model for Generalist Humanoid Robots"
+  },
+  {
+    "key": "cosmos_world_foundation_model_platform_for_physical_ai",
+    "title": "Cosmos World Foundation Model Platform for Physical AI"
+  },
+  {
+    "key": "vision_r1_incentivizing_reasoning_capability_in_multimodal_large_language_models",
+    "title": "Vision-R1: Incentivizing Reasoning Capability in Multimodal Large Language Models"
+  },
+  {
+    "key": "limo_less_is_more_for_reasoning",
+    "title": "LIMO: Less is More for Reasoning"
+  },
+  {
+    "key": "simplerl_zoo_investigating_and_taming_zero_reinforcement_learning_for_open_base_models_in_the_wild",
+    "title": "SimpleRL-Zoo: Investigating and Taming Zero Reinforcement Learning for Open Base Models in the Wild"
+  },
+  {
+    "key": "on_line_policy_improvement_using_monte_carlo_search",
+    "title": "On-line Policy Improvement using Monte-Carlo Search"
+  },
+  {
+    "key": "search_o1_agentic_search_enhanced_large_reasoning_models",
+    "title": "Search-o1: Agentic Search-Enhanced Large Reasoning Models"
+  },
+  {
+    "key": "phi_4_mini_technical_report_compact_yet_powerful_multimodal_language_models_via_mixture_of_loras",
+    "title": "Phi-4-Mini Technical Report: Compact yet Powerful Multimodal Language Models via Mixture-of-LoRAs"
+  },
+  {
+    "key": "the_lessons_of_developing_process_reward_models_in_mathematical_reasoning",
+    "title": "The Lessons of Developing Process Reward Models in Mathematical Reasoning"
+  },
+  {
+    "key": "humanitys_last_exam",
+    "title": "Humanity's Last Exam"
+  },
+  {
+    "key": "a_mutual_learning_method_for_salient_object_detection_with_intertwined_multi_supervision__revised",
+    "title": "A Mutual Learning Method for Salient Object Detection with intertwined Multi-Supervision--Revised"
+  },
+  {
+    "key": "ui_tars_pioneering_automated_gui_interaction_with_native_agents",
+    "title": "UI-TARS: Pioneering Automated GUI Interaction with Native Agents"
+  },
+  {
+    "key": "process_reinforcement_through_implicit_rewards",
+    "title": "Process Reinforcement through Implicit Rewards"
+  },
+  {
+    "key": "multi_agent_collaboration_mechanisms_a_survey_of_llms",
+    "title": "Multi-Agent Collaboration Mechanisms: A Survey of LLMs"
+  },
+  {
+    "key": "l1_controlling_how_long_a_reasoning_model_thinks_with_reinforcement_learning",
+    "title": "L1: Controlling How Long A Reasoning Model Thinks With Reinforcement Learning"
+  },
+  {
+    "key": "towards_reasoning_era_a_survey_of_long_chain_of_thought_for_reasoning_large_language_models",
+    "title": "Towards Reasoning Era: A Survey of Long Chain-of-Thought for Reasoning Large Language Models"
+  },
+  {
+    "key": "gpt_oss_120b__gpt_oss_20b_model_card",
+    "title": "gpt-oss-120b & gpt-oss-20b Model Card"
+  },
+  {
+    "key": "clustering_based_anomaly_detection_in_multivariate_time_series_data",
+    "title": "Clustering-based Anomaly Detection in Multivariate Time Series Data"
+  },
+  {
+    "key": "fine_tuning_vision_language_action_models_optimizing_speed_and_success",
+    "title": "Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success"
+  },
+  {
+    "key": "beyond_the_8020_rule_high_entropy_minority_tokens_drive_effective_reinforcement_learning_for_llm_reasoning",
+    "title": "Beyond the 80/20 Rule: High-Entropy Minority Tokens Drive Effective Reinforcement Learning for LLM Reasoning"
+  },
+  {
+    "key": "the_illusion_of_thinking_understanding_the_strengths_and_limitations_of_reasoning_models_via_the_lens_of_problem_complexity",
+    "title": "The Illusion of Thinking: Understanding the Strengths and Limitations of Reasoning Models via the Lens of Problem Complexity"
+  },
+  {
+    "key": "the_entropy_mechanism_of_reinforcement_learning_for_reasoning_language_models",
+    "title": "The Entropy Mechanism of Reinforcement Learning for Reasoning Language Models"
+  },
+  {
+    "key": "r1_vl_learning_to_reason_with_multimodal_large_language_models_via_step_wise_group_relative_policy_optimization",
+    "title": "R1-VL: Learning to Reason with Multimodal Large Language Models via Step-wise Group Relative Policy Optimization"
+  },
+  {
+    "key": "native_sparse_attention_hardware_aligned_and_natively_trainable_sparse_attention",
+    "title": "Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention"
+  },
+  {
+    "key": "spatialvla_exploring_spatial_representations_for_visual_language_action_model",
+    "title": "SpatialVLA: Exploring Spatial Representations for Visual-Language-Action Model"
+  },
+  {
+    "key": "towards_large_reasoning_models_a_survey_of_reinforced_reasoning_with_large_language_models",
+    "title": "Towards Large Reasoning Models: A Survey of Reinforced Reasoning with Large Language Models"
+  },
+  {
+    "key": "cot_vla_visual_chain_of_thought_reasoning_for_vision_language_action_models",
+    "title": "CoT-VLA: Visual Chain-of-Thought Reasoning for Vision-Language-Action Models"
+  },
+  {
+    "key": "lmm_r1_empowering_3b_lmms_with_strong_reasoning_abilities_through_two_stage_rule_based_rl",
+    "title": "LMM-R1: Empowering 3B LMMs with Strong Reasoning Abilities Through Two-Stage Rule-Based RL"
+  },
+  {
+    "key": "alphaevolve_a_coding_agent_for_scientific_and_algorithmic_discovery",
+    "title": "AlphaEvolve: A coding agent for scientific and algorithmic discovery"
+  },
+  {
+    "key": "retool_reinforcement_learning_for_strategic_tool_use_in_llms",
+    "title": "ReTool: Reinforcement Learning for Strategic Tool Use in LLMs"
+  },
+  {
+    "key": "from_system_1_to_system_2_a_survey_of_reasoning_large_language_models",
+    "title": "From System 1 to System 2: A Survey of Reasoning Large Language Models"
+  },
+  {
+    "key": "reasoning_models_dont_always_say_what_they_think",
+    "title": "Reasoning Models Don't Always Say What They Think"
+  },
+  {
+    "key": "agent_laboratory_using_llm_agents_as_research_assistants",
+    "title": "Agent Laboratory: Using LLM Agents as Research Assistants"
+  },
+  {
+    "key": "why_do_multi_agent_llm_systems_fail",
+    "title": "Why Do Multi-Agent LLM Systems Fail?"
+  },
+  {
+    "key": "logic_rl_unleashing_llm_reasoning_with_rule_based_reinforcement_learning",
+    "title": "Logic-RL: Unleashing LLM Reasoning with Rule-Based Reinforcement Learning"
+  },
+  {
+    "key": "r1_searcher_incentivizing_the_search_capability_in_llms_via_reinforcement_learning",
+    "title": "R1-Searcher: Incentivizing the Search Capability in LLMs via Reinforcement Learning"
+  },
+  {
+    "key": "limits_of_trust_in_medical_ai",
+    "title": "Limits of trust in medical AI"
+  },
+  {
+    "key": "group_sequence_policy_optimization",
+    "title": "Group Sequence Policy Optimization"
+  },
+  {
+    "key": "fast3r_towards_3d_reconstruction_of_1000_images_in_one_forward_pass",
+    "title": "Fast3R: Towards 3D Reconstruction of 1000+ Images in One Forward Pass"
+  },
+  {
+    "key": "vl_rethinker_incentivizing_self_reflection_of_vision_language_models_with_reinforcement_learning",
+    "title": "VL-Rethinker: Incentivizing Self-Reflection of Vision-Language Models with Reinforcement Learning"
+  },
+  {
+    "key": "reinforcement_learning_for_reasoning_in_large_language_models_with_one_training_example",
+    "title": "Reinforcement Learning for Reasoning in Large Language Models with One Training Example"
+  },
+  {
+    "key": "seed1_5_vl_technical_report",
+    "title": "Seed1.5-VL Technical Report"
+  },
+  {
+    "key": "model_context_protocol_mcp_landscape_security_threats_and_future_research_directions",
+    "title": "Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions"
+  },
+  {
+    "key": "flow_grpo_training_flow_matching_models_via_online_rl",
+    "title": "Flow-GRPO: Training Flow Matching Models via Online RL"
+  },
+  {
+    "key": "webthinker_empowering_large_reasoning_models_with_deep_research_capability",
+    "title": "WebThinker: Empowering Large Reasoning Models with Deep Research Capability"
+  },
+  {
+    "key": "agentic_retrieval_augmented_generation_a_survey_on_agentic_rag",
+    "title": "Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG"
+  },
+  {
+    "key": "blip3_o_a_family_of_fully_open_unified_multimodal_models_architecture_training_and_dataset",
+    "title": "BLIP3-o: A Family of Fully Open Unified Multimodal Models-Architecture, Training and Dataset"
+  },
+  {
+    "key": "inference_time_scaling_for_generalist_reward_modeling",
+    "title": "Inference-Time Scaling for Generalist Reward Modeling"
+  },
+  {
+    "key": "vapo_efficient_and_reliable_reinforcement_learning_for_advanced_reasoning_tasks",
+    "title": "VAPO: Efficient and Reliable Reinforcement Learning for Advanced Reasoning Tasks"
+  },
+  {
+    "key": "toolrl_reward_is_all_tool_learning_needs",
+    "title": "ToolRL: Reward is All Tool Learning Needs"
+  },
+  {
+    "key": "ai_agents_vs__agentic_ai_a_conceptual_taxonomy_applications_and_challenges",
+    "title": "AI Agents vs. Agentic AI: A Conceptual Taxonomy, Applications and Challenges"
+  },
+  {
+    "key": "multivariate_time_series_anomaly_detectiona_framework_of_hidden_markov_models",
+    "title": "Multivariate Time series Anomaly Detection:A Framework of Hidden Markov Models"
+  },
+  {
+    "key": "block_diffusion_interpolating_between_autoregressive_and_diffusion_language_models",
+    "title": "Block Diffusion: Interpolating Between Autoregressive and Diffusion Language Models"
+  },
+  {
+    "key": "your_brain_on_chatgpt_accumulation_of_cognitive_debt_when_using_an_ai_assistant_for_essay_writing_task",
+    "title": "Your Brain on ChatGPT: Accumulation of Cognitive Debt when Using an AI Assistant for Essay Writing Task"
+  },
+  {
+    "key": "tokenskip_controllable_chain_of_thought_compression_in_llms",
+    "title": "TokenSkip: Controllable Chain-of-Thought Compression in LLMs"
+  },
+  {
+    "key": "deepresearcher_scaling_deep_research_via_reinforcement_learning_in_real_world_environments",
+    "title": "DeepResearcher: Scaling Deep Research via Reinforcement Learning in Real-world Environments"
+  },
+  {
+    "key": "monitoring_reasoning_models_for_misbehavior_and_the_risks_of_promoting_obfuscation",
+    "title": "Monitoring Reasoning Models for Misbehavior and the Risks of Promoting Obfuscation"
+  },
+  {
+    "key": "r1_zeros_aha_moment_in_visual_reasoning_on_a_2b_non_sft_model",
+    "title": "R1-Zero's \"Aha Moment\" in Visual Reasoning on a 2B Non-SFT Model"
+  },
+  {
+    "key": "swe_rl_advancing_llm_reasoning_via_reinforcement_learning_on_open_software_evolution",
+    "title": "SWE-RL: Advancing LLM Reasoning via Reinforcement Learning on Open Software Evolution"
+  },
+  {
+    "key": "v_jepa_2_self_supervised_video_models_enable_understanding_prediction_and_planning",
+    "title": "V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning"
+  },
+  {
+    "key": "cot_valve_length_compressible_chain_of_thought_tuning",
+    "title": "CoT-Valve: Length-Compressible Chain-of-Thought Tuning"
+  },
+  {
+    "key": "dast_difficulty_adaptive_slow_thinking_for_large_reasoning_models",
+    "title": "DAST: Difficulty-Adaptive Slow-Thinking for Large Reasoning Models"
+  },
+  {
+    "key": "small_language_models_are_the_future_of_agentic_ai",
+    "title": "Small Language Models are the Future of Agentic AI"
+  },
+  {
+    "key": "kimi_audio_technical_report",
+    "title": "Kimi-Audio Technical Report"
+  },
+  {
+    "key": "flashinfer_efficient_and_customizable_attention_engine_for_llm_inference_serving",
+    "title": "FlashInfer: Efficient and Customizable Attention Engine for LLM Inference Serving"
+  },
+  {
+    "key": "ragen_understanding_self_evolution_in_llm_agents_via_multi_turn_reinforcement_learning",
+    "title": "RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning"
+  },
+  {
+    "key": "deepseek_prover_v2_advancing_formal_mathematical_reasoning_via_reinforcement_learning_for_subgoal_decomposition",
+    "title": "DeepSeek-Prover-V2: Advancing Formal Mathematical Reasoning via Reinforcement Learning for Subgoal Decomposition"
+  },
+  {
+    "key": "reasoning_models_can_be_effective_without_thinking",
+    "title": "Reasoning Models Can Be Effective Without Thinking"
+  },
+  {
+    "key": "absolute_zero_reinforced_self_play_reasoning_with_zero_data",
+    "title": "Absolute Zero: Reinforced Self-play Reasoning with Zero Data"
+  },
+  {
+    "key": "when_more_is_less_understanding_chain_of_thought_length_in_llms",
+    "title": "When More is Less: Understanding Chain-of-Thought Length in LLMs"
+  },
+  {
+    "key": "smolvlm_redefining_small_and_efficient_multimodal_models",
+    "title": "SmolVLM: Redefining small and efficient multimodal models"
+  },
+  {
+    "key": "llms_can_easily_learn_to_reason_from_demonstrations_structure_not_content_is_what_matters",
+    "title": "LLMs Can Easily Learn to Reason from Demonstrations Structure, not content, is what matters!"
+  },
+  {
+    "key": "hi_robot_open_ended_instruction_following_with_hierarchical_vision_language_action_models",
+    "title": "Hi Robot: Open-Ended Instruction Following with Hierarchical Vision-Language-Action Models"
+  },
+  {
+    "key": "the_danger_of_overthinking_examining_the_reasoning_action_dilemma_in_agentic_tasks",
+    "title": "The Danger of Overthinking: Examining the Reasoning-Action Dilemma in Agentic Tasks"
+  },
+  {
+    "key": "spurious_rewards_rethinking_training_signals_in_rlvr",
+    "title": "Spurious Rewards: Rethinking Training Signals in RLVR"
+  },
+  {
+    "key": "muon_is_scalable_for_llm_training",
+    "title": "Muon is Scalable for LLM Training"
+  },
+  {
+    "key": "asap_aligning_simulation_and_real_world_physics_for_learning_agile_humanoid_whole_body_skills",
+    "title": "ASAP: Aligning Simulation and Real-World Physics for Learning Agile Humanoid Whole-Body Skills"
+  },
+  {
+    "key": "emergent_misalignment_narrow_finetuning_can_produce_broadly_misaligned_llms",
+    "title": "Emergent Misalignment: Narrow finetuning can produce broadly misaligned LLMs"
+  },
+  {
+    "key": "medvlm_r1_incentivizing_medical_reasoning_capability_of_vision_language_models_vlms_via_reinforcement_learning",
+    "title": "MedVLM-R1: Incentivizing Medical Reasoning Capability of Vision-Language Models (VLMs) via Reinforcement Learning"
+  },
+  {
+    "key": "layer_by_layer_uncovering_hidden_representations_in_language_models",
+    "title": "Layer by Layer: Uncovering Hidden Representations in Language Models"
+  },
+  {
+    "key": "learning_to_reason_under_off_policy_guidance",
+    "title": "Learning to Reason under Off-Policy Guidance"
+  },
+  {
+    "key": "axbench_steering_llms_even_simple_baselines_outperform_sparse_autoencoders",
+    "title": "AxBench: Steering LLMs? Even Simple Baselines Outperform Sparse Autoencoders"
+  },
+  {
+    "key": "can_we_generate_images_with_cot_lets_verify_and_reinforce_image_generation_step_by_step",
+    "title": "Can We Generate Images with CoT? Let's Verify and Reinforce Image Generation Step by Step"
+  },
+  {
+    "key": "improving_video_generation_with_human_feedback",
+    "title": "Improving Video Generation with Human Feedback"
+  }
+]
