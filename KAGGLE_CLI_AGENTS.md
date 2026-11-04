@@ -81,10 +81,10 @@ Kaggle authentication does not give access to Hugging Face. Any kernel that uplo
    ```powershell
    kaggle datasets create -p ./secret-folder --private
    ```
-   Note the dataset slug printed by Kaggle, e.g. `deep-research-1a10/hf-token-store`.
+   Note the dataset slug printed by Kaggle, e.g. `deepresearch1a10/hf-token-store`.
 4. Attach that dataset in `kernel-metadata.json`:
    ```json
-   "dataset_sources": ["deep-research-1a10/hf-token-store"]
+   "dataset_sources": ["deepresearch1a10/hf-token-store"]
    ```
 5. In your Python code, read the token from the mounted path:
    ```python

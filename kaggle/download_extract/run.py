@@ -51,7 +51,21 @@ for i, title in enumerate(titles, 1):
         print(f'[{i}/{len(titles)}] SKIP (extract failed): {title[:50]} - {str(e)[:60]}')
 
 # Upload text files to HF
-token = os.environ.get('HF_TOKEN')
+token = None
+_token_path = "/kaggle/input/datasets/deepresearch1a10/hf-token-store/hf_token.txt"
+if os.path.isfile(_token_path):
+    try:
+        with open(_token_path, "r", encoding="utf-8") as _f:
+            token = _f.read().strip()
+        print("HF token loaded from private dataset, length:", len(token) if token else 0)
+    except Exception as _e:
+        print("Could not read HF token from private dataset:", repr(_e))
+if not token:
+    token = os.environ.get('HF_TOKEN')
+    if token:
+        print("HF token loaded from environment, length:", len(token))
+    else:
+        print("No HF token found")
 api = HfApi(token=token)
 api.create_repo(repo_id='w-ahmad/paper-scope-vectors', repo_type='dataset', exist_ok=True)
 uploaded = 0

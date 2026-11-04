@@ -147,7 +147,7 @@ python -m paper_scope hf-sync w-ahmad/paper-scope-vectors
 
 ## Important Notes
 
-- **HF uploads need a Hugging Face token**: Kernels that upload to Hugging Face read the token from the private dataset `deep-research-1a10/hf-token-store`, which contains a file named `hf_token.txt`. The code reads the token from `/kaggle/input/datasets/deepresearch1a10/hf-token-store/hf_token.txt`.
+- **HF uploads need a Hugging Face token**: Kernels that upload to Hugging Face read the token from the private dataset `deepresearch1a10/hf-token-store`, which contains a file named `hf_token.txt`. The code reads the token from `/kaggle/input/datasets/deepresearch1a10/hf-token-store/hf_token.txt`.
 - **Local working copy**: All code lives on this computer. The watcher keeps the online code site in sync.
 - **Watcher always on**: The watcher runs every 1 minute and sends local changes to the online code site.
 - **No GitHub Actions**: Tests run on Kaggle CPU
