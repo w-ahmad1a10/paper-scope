@@ -93,7 +93,7 @@ def load_resources():
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
     print("Loading FAISS chunks index (memory-mapped)...")
     index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP)
-    index.nprobe = 64
+    index.nprobe = 32
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
     global SUBSET_BASE
@@ -156,33 +156,14 @@ def search_ui(query, k):
     if not query:
         return []
     k = int(k)
-    N = 200
-    qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
+    try:
+        N = 100
+        qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
+        scores, idxs = index.search(qvec, N)
+        scores, idxs = scores[0], idxs[0]
 
-    # Step 0: oversample chunks
-    scores, idxs = index.search(qvec, N)
-    scores, idxs = scores[0], idxs[0]
-
-    # Step 1+2: group by paper, max-pool
-    paper_best = {}  # paper_id -> (best_score, chunk_idx, paper_global_idx)
-    for s, ci in zip(scores, idxs):
-        if ci is None or int(ci) < 0:
-            continue
-        ci = int(ci)
-        if ci >= len(chunk_to_paper):
-            continue
-        pgid = int(chunk_to_paper[ci])
-        if pgid >= len(paper_order):
-            continue
-        prow = paper_order.iloc[pgid]
-        paper_id = str(prow["paper_id"])
-        if paper_id not in paper_best or float(s) > paper_best[paper_id][0]:
-            paper_best[paper_id] = (float(s), ci, pgid)
-
-    # adaptive bump
-    if len(paper_best) < k:
-        scores2, idxs2 = index.search(qvec, 500)
-        for s, ci in zip(scores2[0], idxs2[0]):
+        paper_best = {}
+        for s, ci in zip(scores, idxs):
             if ci is None or int(ci) < 0:
                 continue
             ci = int(ci)
@@ -196,19 +177,42 @@ def search_ui(query, k):
             if paper_id not in paper_best or float(s) > paper_best[paper_id][0]:
                 paper_best[paper_id] = (float(s), ci, pgid)
 
-    # Step 3: sort, take top-k
-    ranked = sorted(paper_best.items(), key=lambda kv: -kv[1][0])[:k]
+        if len(paper_best) < k:
+            scores2, idxs2 = index.search(qvec, 500)
+            for s, ci in zip(scores2[0], idxs2[0]):
+                if ci is None or int(ci) < 0:
+                    continue
+                ci = int(ci)
+                if ci >= len(chunk_to_paper):
+                    continue
+                pgid = int(chunk_to_paper[ci])
+                if pgid >= len(paper_order):
+                    continue
+                prow = paper_order.iloc[pgid]
+                paper_id = str(prow["paper_id"])
+                if paper_id not in paper_best or float(s) > paper_best[paper_id][0]:
+                    paper_best[paper_id] = (float(s), ci, pgid)
 
-    out = []
-    for rank, (paper_id, (score, ci, pgid)) in enumerate(ranked, start=1):
-        prow = paper_order.iloc[pgid]
-        subset = str(prow["subset"])
-        base = SUBSET_BASE.get(subset, 0)
-        local_offset = pgid - base
-        title, doi = fetch_title(subset, paper_id, local_offset)
-        link = make_link(subset, paper_id, doi)
-        out.append([rank, round(float(score), 4), title, subset, paper_id, link or ""])
-    return out
+        ranked = sorted(paper_best.items(), key=lambda kv: -kv[1][0])[:k]
+
+        out = []
+        for rank, (paper_id, (score, ci, pgid)) in enumerate(ranked, start=1):
+            prow = paper_order.iloc[pgid]
+            subset = str(prow["subset"])
+            base = SUBSET_BASE.get(subset, 0)
+            local_offset = pgid - base
+            try:
+                title, doi = fetch_title(subset, paper_id, local_offset)
+            except Exception:
+                title, doi = paper_id, None
+            link = make_link(subset, paper_id, doi)
+            out.append([rank, round(float(score), 4), title or paper_id, subset, paper_id, link or ""])
+        print(f"Search done: {len(out)} results")
+        return out
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return []
 
 
 def main():
