@@ -1,9 +1,9 @@
 """Method-as-Query Test for PaperScope.
 
 For each paper:
-  1. Download PDF from arXiv
+  1. Read its extracted text from Hugging Face (text/{key}.txt)
   2. Extract method section (Method/Approach/Methodology heading)
-  3. Embed method text as a query (search_query: prefix)
+  3. Embed method text as a query
   4. Search against ALL papers in the full-text index
   5. Record: rank of correct paper, similarity score, point (1 if rank==1),
      and top-10 similarity values
@@ -18,20 +18,18 @@ from __future__ import annotations
 
 import json
 import re
-import time
-from pathlib import Path
-
-import arxiv
-import fitz
-import numpy as np
-
 import sys
+from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from paper_scope.config import INDEX_DIR
+import numpy as np
+
+from paper_scope.config import INDEX_DIR, TEXT_DIR
 from paper_scope.embed import Embedder
 from paper_scope.index_store import SemanticIndex
+from huggingface_hub import hf_hub_download
 
+HF_REPO = "w-ahmad/paper-scope-vectors"
 
 # Section heading patterns for method extraction
 METHOD_HEADINGS = re.compile(
@@ -45,50 +43,6 @@ NEXT_SECTION_HEADINGS = re.compile(
     r"conclusion(?:s)?|discussion|limitation(?:s)?|reference(?:s)?|"
     r"bibliography|appendix|ablation|analysis)\s*$",
 )
-
-
-def fetch_pdf_url(title: str) -> str | None:
-    """Get PDF URL from arXiv by title."""
-    try:
-        client = arxiv.Client()
-        search = arxiv.Search(query='ti:"' + title + '"', max_results=3)
-        results = list(client.results(search))
-        if not results:
-            return None
-        import re as _re
-        norm = lambda s: _re.sub(r"\W+", " ", s).lower().strip()
-        target = norm(title)
-        for r in results:
-            if norm(r.title) == target:
-                return r.pdf_url
-        return results[0].pdf_url
-    except Exception:
-        return None
-
-
-def download_pdf(url: str, dest: Path) -> bool:
-    """Download PDF from URL to dest. Returns True on success."""
-    import urllib.request
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            urllib.request.urlretrieve(url, str(dest))
-            if dest.is_file() and dest.stat().st_size > 20000:
-                return True
-        except Exception:
-            if attempt < max_retries - 1:
-                time.sleep(2 ** attempt)
-    return False
-
-
-def extract_full_text(pdf_path: Path) -> str:
-    """Extract full text from PDF using PyMuPDF."""
-    doc = fitz.open(str(pdf_path))
-    text = ""
-    for page in doc:
-        text += page.get_text() + "\n"
-    doc.close()
-    return text
 
 
 def extract_method_section(full_text: str) -> str | None:
@@ -132,19 +86,65 @@ def extract_method_section(full_text: str) -> str | None:
     return method_text
 
 
+def get_text_path(key: str) -> Path:
+    """Get local path to the HF text file, downloading if needed."""
+    local_path = TEXT_DIR / f"{key}.txt"
+    if local_path.is_file() and local_path.stat().st_size > 0:
+        return local_path
+    # Download from HF
+    TEXT_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        downloaded = hf_hub_download(
+            HF_REPO, f"text/{key}.txt", repo_type="dataset",
+            local_dir=str(TEXT_DIR.parent),
+            local_dir_use_symlinks=False,
+        )
+        return Path(downloaded)
+    except Exception:
+        return local_path
+
+
+def detect_device() -> str:
+    """Detect best available device (GPU preferred)."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+    except ImportError:
+        pass
+    return "cpu"
+
+
 def run_method_test(
     index_dir: Path = INDEX_DIR,
     output_dir: Path = Path("comparison/results"),
-    pdf_dir: Path = Path("comparison/pdfs"),
-    method_dir: Path = Path("comparison/method_texts"),
     model_name: str = "Alibaba-NLP/gte-modernbert-base",
     top_k: int = 10,
 ) -> dict:
     """Run the method-as-query test and save results."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    pdf_dir.mkdir(parents=True, exist_ok=True)
-    method_dir.mkdir(parents=True, exist_ok=True)
+
+    # Device detection
+    device = detect_device()
+
+    # Print hyperparameters
+    print("=" * 60)
+    print("METHOD-AS-QUERY TEST - CONFIGURATION")
+    print("=" * 60)
+    print(f"  Model:          {model_name}")
+    print(f"  Device:         {device}")
+    print(f"  Top-K:          {top_k}")
+    print(f"  Index dir:      {index_dir}")
+    if device == "cuda":
+        try:
+            import torch
+            print(f"  GPU:            {torch.cuda.get_device_name(0)}")
+            print(f"  GPU Memory:     {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+        except Exception:
+            pass
+    print("=" * 60)
+    print("")
 
     # Load index
     index = SemanticIndex.load(index_dir)
@@ -152,7 +152,9 @@ def run_method_test(
     print(f"Loaded index: {len(papers)} papers, dim={index.dimension}")
 
     # Load embedder
-    embedder = Embedder(model_name)
+    embedder = Embedder(model_name, device=device)
+    print(f"Embedder loaded on: {embedder.device}")
+    print("")
 
     per_paper_results = []
     ranks = []
@@ -163,35 +165,22 @@ def run_method_test(
         key = paper["key"]
         title = paper["title"]
 
-        pdf_path = pdf_dir / f"{key}.pdf"
-        method_text_path = method_dir / f"{key}.txt"
+        # Read text from HF
+        text_path = get_text_path(key)
+        if not text_path.is_file():
+            print(f"  [{idx+1}/{len(papers)}] SKIP (no text file): {title[:50]}")
+            skipped.append(key)
+            continue
 
-        # Download PDF if not cached
-        if not pdf_path.is_file():
-            url = fetch_pdf_url(title)
-            if not url:
-                print(f"  [{idx+1}/{len(papers)}] SKIP (no PDF URL): {title[:50]}")
-                skipped.append(key)
-                continue
-            if not download_pdf(url, pdf_path):
-                print(f"  [{idx+1}/{len(papers)}] SKIP (download failed): {title[:50]}")
-                skipped.append(key)
-                continue
+        try:
+            full_text = text_path.read_text(encoding="utf-8")
+        except Exception:
+            print(f"  [{idx+1}/{len(papers)}] SKIP (read error): {title[:50]}")
+            skipped.append(key)
+            continue
 
         # Extract method section
-        if method_text_path.is_file():
-            method_text = method_text_path.read_text(encoding="utf-8")
-        else:
-            try:
-                full_text = extract_full_text(pdf_path)
-                method_text = extract_method_section(full_text)
-                if method_text:
-                    method_text_path.write_text(method_text, encoding="utf-8")
-            except Exception as e:
-                print(f"  [{idx+1}/{len(papers)}] SKIP (extraction error): {title[:50]} - {e}")
-                skipped.append(key)
-                continue
-
+        method_text = extract_method_section(full_text)
         if not method_text:
             print(f"  [{idx+1}/{len(papers)}] SKIP (no method section): {title[:50]}")
             skipped.append(key)
@@ -245,8 +234,6 @@ def run_method_test(
             f"words={len(method_text.split()):5d}  point={point}  {title[:40]}"
         )
 
-        time.sleep(0.5)
-
     # Compute aggregate metrics
     n = len(ranks)
     recall_at = {}
@@ -258,6 +245,8 @@ def run_method_test(
 
     metrics = {
         "test": "method_as_query",
+        "model": model_name,
+        "device": device,
         "total_papers": len(papers),
         "tested": n,
         "skipped": len(skipped),
@@ -285,6 +274,8 @@ def run_method_test(
     print("\n" + "=" * 60)
     print("METHOD-AS-QUERY TEST RESULTS")
     print("=" * 60)
+    print(f"  Model:          {model_name}")
+    print(f"  Device:         {device}")
     print(f"  Papers tested:  {n}")
     print(f"  Skipped:        {len(skipped)}")
     print(f"  Recall@1:       {metrics['recall_at_1']:.4f}  ({sum(1 for r in ranks if r <= 1)}/{n})")

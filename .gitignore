@@ -12,6 +12,8 @@ data/text/
 data/index/
 data/cache/
 data/*.tmp
+# Downloaded HF text files (root-level, if any)
+text/
 *.part
 
 # Hugging Face cache if a user points it into the project

@@ -1,11 +1,15 @@
 """Abstract-as-Query Test for PaperScope.
 
 For each paper:
-  1. Fetch its abstract from arXiv
-  2. Embed the abstract as a query (search_query: prefix)
-  3. Search against ALL papers in the full-text index
-  4. Record: rank of correct paper, similarity score, point (1 if rank==1),
+  1. Read its extracted text from Hugging Face (text/{key}.txt)
+  2. Extract the abstract from the text (between "Abstract" and "Introduction")
+  3. Embed the abstract as a query
+  4. Search against ALL papers in the full-text index
+  5. Record: rank of correct paper, similarity score, point (1 if rank==1),
      and top-10 similarity values
+
+Papers without an "Abstract" keyword in their text are skipped.
+If abstract extraction fails, the paper is skipped.
 
 Aggregate metrics: Recall@1/3/5/10, MRR, Mean Rank
 
@@ -15,38 +19,84 @@ Results saved to comparison/results/abstract_as_query.json
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import json
-import time
-import arxiv
 import numpy as np
 
-from paper_scope.config import INDEX_DIR
+from paper_scope.config import INDEX_DIR, TEXT_DIR
 from paper_scope.embed import Embedder
 from paper_scope.index_store import SemanticIndex
+from huggingface_hub import hf_hub_download
+
+HF_REPO = "w-ahmad/paper-scope-vectors"
+
+# Regex to find where the abstract ends (next section heading)
+_ABSTRACT_END = re.compile(
+    r"\b(introduction|keywords?|index terms|1\.?\s*introduction)\b",
+    re.IGNORECASE,
+)
 
 
-def fetch_abstract(title: str) -> str | None:
-    """Fetch abstract from arXiv by exact title match."""
-    try:
-        client = arxiv.Client()
-        search = arxiv.Search(query='ti:"' + title + '"', max_results=3)
-        results = list(client.results(search))
-        if not results:
-            return None
-        # Find best match by normalized title
-        import re
-        norm = lambda s: re.sub(r"\W+", " ", s).lower().strip()
-        target = norm(title)
-        for r in results:
-            if norm(r.title) == target:
-                return r.summary
-        return results[0].summary
-    except Exception:
+def extract_abstract_from_text(text: str) -> str | None:
+    """Extract the abstract from cleaned paper text.
+
+    Looks for the 'Abstract' keyword and captures text until the next
+    section heading (Introduction, Keywords, etc.).
+    Returns None if no 'Abstract' keyword is found or extraction fails.
+    """
+    match = re.search(r"\babstract\b", text, re.IGNORECASE)
+    if not match:
         return None
+
+    # Start after the 'Abstract' keyword
+    rest = text[match.end():].lstrip(" :.-\u2013\u2014\t\n")
+
+    # Find where the abstract ends
+    end_match = _ABSTRACT_END.search(rest)
+    if end_match:
+        abstract = rest[:end_match.start()].strip()
+    else:
+        # No clear end marker; take first 1500 chars as fallback
+        abstract = rest[:1500].strip()
+
+    # Check minimum length
+    if len(abstract.split()) < 30:
+        return None
+
+    return abstract
+
+
+def get_text_path(key: str) -> Path:
+    """Get local path to the HF text file, downloading if needed."""
+    local_path = TEXT_DIR / f"{key}.txt"
+    if local_path.is_file() and local_path.stat().st_size > 0:
+        return local_path
+    # Download from HF
+    TEXT_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        downloaded = hf_hub_download(
+            HF_REPO, f"text/{key}.txt", repo_type="dataset",
+            local_dir=str(TEXT_DIR.parent),
+            local_dir_use_symlinks=False,
+        )
+        return Path(downloaded)
+    except Exception:
+        return local_path
+
+
+def detect_device() -> str:
+    """Detect best available device (GPU preferred)."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+    except ImportError:
+        pass
+    return "cpu"
 
 
 def run_abstract_test(
@@ -59,13 +109,36 @@ def run_abstract_test(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Device detection
+    device = detect_device()
+
+    # Print hyperparameters
+    print("=" * 60)
+    print("ABSTRACT-AS-QUERY TEST - CONFIGURATION")
+    print("=" * 60)
+    print(f"  Model:          {model_name}")
+    print(f"  Device:         {device}")
+    print(f"  Top-K:          {top_k}")
+    print(f"  Index dir:      {index_dir}")
+    if device == "cuda":
+        try:
+            import torch
+            print(f"  GPU:            {torch.cuda.get_device_name(0)}")
+            print(f"  GPU Memory:     {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+        except Exception:
+            pass
+    print("=" * 60)
+    print("")
+
     # Load index
     index = SemanticIndex.load(index_dir)
     papers = index.papers
     print(f"Loaded index: {len(papers)} papers, dim={index.dimension}")
 
     # Load embedder
-    embedder = Embedder(model_name)
+    embedder = Embedder(model_name, device=device)
+    print(f"Embedder loaded on: {embedder.device}")
+    print("")
 
     # Per-paper results
     per_paper_results = []
@@ -77,8 +150,22 @@ def run_abstract_test(
         key = paper["key"]
         title = paper["title"]
 
-        # Fetch abstract from arXiv
-        abstract = fetch_abstract(title)
+        # Read text from HF
+        text_path = get_text_path(key)
+        if not text_path.is_file():
+            print(f"  [{idx+1}/{len(papers)}] SKIP (no text file): {title[:60]}")
+            skipped.append(key)
+            continue
+
+        try:
+            text = text_path.read_text(encoding="utf-8")
+        except Exception:
+            print(f"  [{idx+1}/{len(papers)}] SKIP (read error): {title[:60]}")
+            skipped.append(key)
+            continue
+
+        # Extract abstract from text
+        abstract = extract_abstract_from_text(text)
         if not abstract:
             print(f"  [{idx+1}/{len(papers)}] SKIP (no abstract): {title[:60]}")
             skipped.append(key)
@@ -127,9 +214,6 @@ def run_abstract_test(
             f"point={point}  {title[:50]}"
         )
 
-        # Rate limit for arXiv API
-        time.sleep(1.0)
-
     # Compute aggregate metrics
     n = len(ranks)
     recall_at = {}
@@ -141,6 +225,8 @@ def run_abstract_test(
 
     metrics = {
         "test": "abstract_as_query",
+        "model": model_name,
+        "device": device,
         "total_papers": len(papers),
         "tested": n,
         "skipped": len(skipped),
@@ -169,6 +255,8 @@ def run_abstract_test(
     print("\n" + "=" * 60)
     print("ABSTRACT-AS-QUERY TEST RESULTS")
     print("=" * 60)
+    print(f"  Model:          {model_name}")
+    print(f"  Device:         {device}")
     print(f"  Papers tested:  {n}")
     print(f"  Skipped:        {len(skipped)}")
     print(f"  Recall@1:       {metrics['recall_at_1']:.4f}  ({sum(1 for r in ranks if r <= 1)}/{n})")
