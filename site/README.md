@@ -22,7 +22,7 @@ First run downloads ~3.4 GB (chunks FAISS index) + builds a ~480 MB chunk->paper
 3. Oversamples N=100 nearest chunks from the chunks FAISS index (60.3M vectors).
 4. Groups chunks by paper and keeps each paper's best matching passage (max-pool).
 5. Dedupes and returns top-k papers by best passage score.
-6. Titles and links are fetched on demand from Hugging Face (no big data download).
+6. Titles and links are fetched on demand from Hugging Face (parallel, 30s timeout, cached to title_cache.json). Links use DOI when available.
 
 ## Credit
 Data and indices: LAION Scientific-Summaries (Project Alexandria), CC-BY-4.0.

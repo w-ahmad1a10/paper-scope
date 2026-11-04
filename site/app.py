@@ -8,6 +8,7 @@ No web server, no Gradio. Results print to stdout.
 Credit: LAION Project Alexandria, CC-BY-4.0.
 """
 import argparse
+import json
 import os
 # Force single-threaded math libs BEFORE importing faiss/numpy-heavy libs.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
@@ -47,6 +48,7 @@ SUBSET_BASE = {
 }
 
 title_cache = {}
+TITLE_CACHE_FILE = "./title_cache.json"
 model = None
 index = None
 paper_order = None
@@ -108,13 +110,28 @@ def load_resources():
         matches = np.where(paper_order["subset"].values == s)[0]
         SUBSET_BASE[s] = int(matches[0]) if len(matches) else 0
     build_chunk_mapping()
+    # load title cache from disk if present
+    if os.path.exists(TITLE_CACHE_FILE):
+        try:
+            with open(TITLE_CACHE_FILE, "r", encoding="utf-8") as f:
+                title_cache.update(json.load(f))
+            print(f"Loaded {len(title_cache)} cached titles.")
+        except Exception:
+            pass
     print(f"Ready. Papers: {len(paper_order):,}  Chunks: {len(chunk_to_paper):,}")
 
 
+def _cache_key(subset, local_offset):
+    return f"{subset}::{int(local_offset)}"
+
+
 def fetch_title(subset, paper_id, local_offset):
-    key = (subset, int(local_offset))
+    key = _cache_key(subset, local_offset)
     if key in title_cache:
-        return title_cache[key]
+        v = title_cache[key]
+        if isinstance(v, (list, tuple)):
+            return v[0], v[1]
+        return v.get("t"), v.get("d")
     title = None
     doi = None
     try:
@@ -123,7 +140,7 @@ def fetch_title(subset, paper_id, local_offset):
             f"?dataset=laion/Scientific-Summaries&config={subset}"
             f"&split=train&offset={int(local_offset)}&length=1"
         )
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=30)
         if r.status_code == 200:
             rows = r.json().get("rows", [])
             if rows:
@@ -132,11 +149,11 @@ def fetch_title(subset, paper_id, local_offset):
                 doi = row.get("source_doi")
     except Exception as e:
         print("HF rows fetch failed:", repr(e))
-    if not title and str(subset).startswith("arxiv"):
+    # arXiv API fallback only if paper_id looks like an arXiv id (e.g. 1234.56789)
+    if not title and str(paper_id) and re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", str(paper_id)):
         try:
-            arxiv_id = str(paper_id).replace("v1", "").replace("v2", "").replace("v3", "")
-            url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
-            r = requests.get(url, timeout=10)
+            url = f"http://export.arxiv.org/api/query?id_list={paper_id}"
+            r = requests.get(url, timeout=15)
             if r.status_code == 200 and "<title>" in r.text:
                 m = re.search(r"<title>(.*?)</title>", r.text, re.S)
                 if m:
@@ -145,15 +162,15 @@ def fetch_title(subset, paper_id, local_offset):
             print("arXiv API fetch failed:", repr(e))
     if not title:
         title = paper_id
-    title_cache[key] = (title, doi)
-    return title_cache[key]
+    title_cache[key] = {"t": title, "d": doi}
+    return title, doi
 
 
 def make_link(subset, paper_id, doi):
-    if str(subset).startswith("arxiv"):
-        return f"https://arxiv.org/abs/{paper_id}"
     if doi:
         return f"https://doi.org/{doi}"
+    if str(paper_id) and re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", str(paper_id)):
+        return f"https://arxiv.org/abs/{paper_id}"
     return None
 
 
@@ -202,16 +219,37 @@ def search(query, k):
 
     ranked = sorted(paper_best.items(), key=lambda kv: -kv[1][0])[:k]
 
-    out = []
+    # resolve titles in parallel (faster than sequential)
+    tasks = []
     for rank, (paper_id, (score, ci, pgid)) in enumerate(ranked, start=1):
         prow = paper_order.iloc[pgid]
         subset = str(prow["subset"])
         base = SUBSET_BASE.get(subset, 0)
         local_offset = pgid - base
+        tasks.append((rank, paper_id, score, subset, local_offset))
+
+    from concurrent.futures import ThreadPoolExecutor
+    def _fetch(t):
+        rank, paper_id, score, subset, local_offset = t
         title, doi = fetch_title(subset, paper_id, local_offset)
+        return rank, paper_id, score, subset, local_offset, title, doi
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        fetched = list(ex.map(_fetch, tasks))
+
+    out = []
+    for rank, paper_id, score, subset, local_offset, title, doi in fetched:
         link = make_link(subset, paper_id, doi)
         out.append((rank, round(float(score), 4), title or paper_id, subset, paper_id, link or ""))
         print(f"  {rank}. [{round(float(score),4)}] {title or paper_id}", flush=True)
+
+    # persist title cache to disk
+    try:
+        with open(TITLE_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(title_cache, f)
+    except Exception:
+        pass
+
     return out
 
 
