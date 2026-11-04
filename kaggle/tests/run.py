@@ -15,7 +15,7 @@ REPO_DIR = "/kaggle/working/repo"
 os.system(f"git clone {REPO_URL} {REPO_DIR}")
 
 # Install dependencies
-os.system("pip install -q sentence-transformers huggingface_hub 2>&1 | tail -3")
+os.system("pip install -q sentence-transformers huggingface_hub PyMuPDF 2>&1 | tail -3")
 
 # Change to repo directory
 os.chdir(REPO_DIR)
