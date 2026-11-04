@@ -1,0 +1,84 @@
+﻿[{"stream_name":"stderr","time":1.010337586,"data":"Cloning into '/kaggle/working/repo'...\n"}
+,{"stream_name":"stdout","time":13.795006621,"data":"CUDA available: True\n"}
+,{"stream_name":"stdout","time":13.795073832,"data":"GPU: Tesla T4\n"}
+,{"stream_name":"stderr","time":18.58164364,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":18.581672872,"data":"  File \"/kaggle/working/repo/paper_scope/extract.py\", line 11, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":18.58167832,"data":"    import pymupdf\n"}
+,{"stream_name":"stderr","time":18.581682182,"data":"ModuleNotFoundError: No module named 'pymupdf'\n"}
+,{"stream_name":"stderr","time":18.581685666,"data":"\n"}
+,{"stream_name":"stderr","time":18.581688859,"data":"During handling of the above exception, another exception occurred:\n"}
+,{"stream_name":"stderr","time":18.581692001,"data":"\n"}
+,{"stream_name":"stderr","time":18.581695302,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":18.582096514,"data":"  File \"\u003cfrozen runpy\u003e\", line 203, in _run_module_as_main\n"}
+,{"stream_name":"stderr","time":18.582115992,"data":"  File \"\u003cfrozen runpy\u003e\", line 88, in _run_code\n"}
+,{"stream_name":"stderr","time":18.582120251,"data":"  File \"/kaggle/working/repo/paper_scope/__main__.py\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":18.582123951,"data":"    from .cli import main\n"}
+,{"stream_name":"stderr","time":18.582127407,"data":"  File \"/kaggle/working/repo/paper_scope/cli.py\", line 14, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":18.58213113,"data":"    from .batch import batch_add\n"}
+,{"stream_name":"stderr","time":18.5821347,"data":"  File \"/kaggle/working/repo/paper_scope/batch.py\", line 36, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":18.582138283,"data":"    from .extract import extract_paper\n"}
+,{"stream_name":"stderr","time":18.582141817,"data":"  File \"/kaggle/working/repo/paper_scope/extract.py\", line 13, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":18.58214553,"data":"    import fitz as pymupdf  # type: ignore[no-redefinition]\n"}
+,{"stream_name":"stderr","time":18.582149133,"data":"    ^^^^^^^^^^^^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":18.582152932,"data":"ModuleNotFoundError: No module named 'fitz'\n"}
+,{"stream_name":"stderr","time":19.153667415,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":19.154306275,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":19.154355686,"data":"    from paper_scope.config import INDEX_DIR; from paper_scope.index_store import SemanticIndex; idx = SemanticIndex.load(INDEX_DIR); print('Papers:', len(idx.papers), 'Dim:', idx.dimension, 'Model:', idx.model_name)\n"}
+,{"stream_name":"stderr","time":19.154363278,"data":"                                                                                                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^\n"}
+,{"stream_name":"stderr","time":19.154367694,"data":"  File \"/kaggle/working/repo/paper_scope/index_store.py\", line 94, in load\n"}
+,{"stream_name":"stderr","time":19.154371985,"data":"    raise IndexError(\n"}
+,{"stream_name":"stderr","time":19.154375724,"data":"        f\"No index found in {index_dir}. Add papers before searching.\"\n"}
+,{"stream_name":"stderr","time":19.154379643,"data":"    )\n"}
+,{"stream_name":"stderr","time":19.154383406,"data":"paper_scope.index_store.IndexError: No index found in /kaggle/working/repo/data/index. Add papers before searching.\n"}
+,{"stream_name":"stdout","time":21.512880914,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":21.512943011,"data":"ABSTRACT-AS-QUERY TEST - CONFIGURATION\n"}
+,{"stream_name":"stdout","time":21.512949148,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":21.512953541999998,"data":"  Model:          Alibaba-NLP/gte-modernbert-base\n"}
+,{"stream_name":"stdout","time":21.512957019,"data":"  Device:         cuda\n"}
+,{"stream_name":"stdout","time":21.512961025,"data":"  Top-K:          10\n"}
+,{"stream_name":"stdout","time":21.512964672,"data":"  Index dir:      /kaggle/working/repo/data/index\n"}
+,{"stream_name":"stdout","time":21.512968008,"data":"  GPU:            Tesla T4\n"}
+,{"stream_name":"stdout","time":21.512971225,"data":"  GPU Memory:     15.6 GB\n"}
+,{"stream_name":"stdout","time":21.512974549,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":21.512977872,"data":"\n"}
+,{"stream_name":"stderr","time":21.51331703,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":21.513880383,"data":"  File \"/kaggle/working/repo/comparison/run_abstract_test.py\", line 277, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":21.513888267,"data":"    run_abstract_test()\n"}
+,{"stream_name":"stderr","time":21.51389167,"data":"    ~~~~~~~~~~~~~~~~~^^\n"}
+,{"stream_name":"stderr","time":21.513895,"data":"  File \"/kaggle/working/repo/comparison/run_abstract_test.py\", line 134, in run_abstract_test\n"}
+,{"stream_name":"stderr","time":21.513898557,"data":"    index = SemanticIndex.load(index_dir)\n"}
+,{"stream_name":"stderr","time":21.513901937,"data":"  File \"/kaggle/working/repo/paper_scope/index_store.py\", line 94, in load\n"}
+,{"stream_name":"stderr","time":21.513905347,"data":"    raise IndexError(\n"}
+,{"stream_name":"stderr","time":21.513908657,"data":"        f\"No index found in {index_dir}. Add papers before searching.\"\n"}
+,{"stream_name":"stderr","time":21.513912132,"data":"    )\n"}
+,{"stream_name":"stderr","time":21.513915393,"data":"paper_scope.index_store.IndexError: No index found in /kaggle/working/repo/data/index. Add papers before searching.\n"}
+,{"stream_name":"stdout","time":24.138301521,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":24.13833986,"data":"METHOD-AS-QUERY TEST - CONFIGURATION\n"}
+,{"stream_name":"stdout","time":24.138344348,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":24.138348218,"data":"  Model:          Alibaba-NLP/gte-modernbert-base\n"}
+,{"stream_name":"stdout","time":24.138351973,"data":"  Device:         cuda\n"}
+,{"stream_name":"stdout","time":24.138355597,"data":"  Top-K:          10\n"}
+,{"stream_name":"stdout","time":24.138358968,"data":"  Index dir:      /kaggle/working/repo/data/index\n"}
+,{"stream_name":"stdout","time":24.138362638,"data":"  GPU:            Tesla T4\n"}
+,{"stream_name":"stdout","time":24.138366351,"data":"  GPU Memory:     15.6 GB\n"}
+,{"stream_name":"stdout","time":24.138369973,"data":"============================================================\n"}
+,{"stream_name":"stdout","time":24.138373747,"data":"\n"}
+,{"stream_name":"stderr","time":24.138864008,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":24.139576218,"data":"  File \"/kaggle/working/repo/comparison/run_method_test.py\", line 294, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":24.139595504,"data":"    run_method_test()\n"}
+,{"stream_name":"stderr","time":24.139599936,"data":"    ~~~~~~~~~~~~~~~^^\n"}
+,{"stream_name":"stderr","time":24.139626613,"data":"  File \"/kaggle/working/repo/comparison/run_method_test.py\", line 148, in run_method_test\n"}
+,{"stream_name":"stderr","time":24.139630771,"data":"    index = SemanticIndex.load(index_dir)\n"}
+,{"stream_name":"stderr","time":24.139634352,"data":"  File \"/kaggle/working/repo/paper_scope/index_store.py\", line 94, in load\n"}
+,{"stream_name":"stderr","time":24.139637901,"data":"    raise IndexError(\n"}
+,{"stream_name":"stderr","time":24.139641264,"data":"        f\"No index found in {index_dir}. Add papers before searching.\"\n"}
+,{"stream_name":"stderr","time":24.139644882,"data":"    )\n"}
+,{"stream_name":"stderr","time":24.139648192,"data":"paper_scope.index_store.IndexError: No index found in /kaggle/working/repo/data/index. Add papers before searching.\n"}
+,{"stream_name":"stdout","time":25.344129063,"data":"TESTS_DONE_MARKER\n"}
+,{"stream_name":"stderr","time":27.515584377,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":27.515616915,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":27.815031641,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":27.815088894,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":28.626960859,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":29.680621105,"data":"[NbConvertApp] Writing 277126 bytes to __results__.html\n"}
+]
