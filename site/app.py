@@ -9,6 +9,11 @@ Credit: LAION Project Alexandria, CC-BY-4.0.
 """
 import argparse
 import os
+# Force single-threaded math libs BEFORE importing faiss/numpy-heavy libs.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 import re
 import sys
 import time
@@ -90,10 +95,11 @@ def load_resources():
     global model, index, paper_order, chunk_to_paper
     print("Loading embedding model (gte-modernbert-base)...")
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
-    print("Loading FAISS chunks index (memory-mapped)...")
+    print("Loading FAISS chunks index (fully into RAM)...")
     faiss.omp_set_num_threads(1)
-    index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP | faiss.IO_FLAG_ONDISK_SAME_DIR)
-    index.nprobe = 16
+    index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_ONDISK_SAME_DIR)
+    index.nprobe = 8
+    print("Index loaded into RAM.")
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
     global SUBSET_BASE
@@ -156,7 +162,7 @@ def search(query, k):
     if not query:
         return []
     k = int(k)
-    N = 50
+    N = 30
     qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
     print("Searching index...", flush=True)
     scores, idxs = index.search(qvec, N)
@@ -179,7 +185,7 @@ def search(query, k):
             paper_best[paper_id] = (float(s), ci, pgid)
 
     if len(paper_best) < k:
-        scores2, idxs2 = index.search(qvec, 100)
+        scores2, idxs2 = index.search(qvec, 60)
         for s, ci in zip(scores2[0], idxs2[0]):
             if ci is None or int(ci) < 0:
                 continue
