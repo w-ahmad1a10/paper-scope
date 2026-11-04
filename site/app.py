@@ -92,7 +92,7 @@ def load_resources():
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
     print("Loading FAISS chunks index (memory-mapped)...")
     faiss.omp_set_num_threads(1)
-    index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP)
+    index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP | faiss.IO_FLAG_ONDISK_SAME_DIR)
     index.nprobe = 16
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
@@ -222,7 +222,12 @@ def main():
     print(f"\nQuery: {query}")
     print(f"Top {args.k}:\n")
     t0 = time.time()
-    results = search(query, args.k)
+    try:
+        results = search(query, args.k)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        results = []
     dt = time.time() - t0
     print(f"\nDone in {dt:.1f}s. {len(results)} results.")
 
