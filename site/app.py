@@ -91,8 +91,9 @@ def load_resources():
     print("Loading embedding model (gte-modernbert-base)...")
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
     print("Loading FAISS chunks index (memory-mapped)...")
+    faiss.omp_set_num_threads(1)
     index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP)
-    index.nprobe = 32
+    index.nprobe = 16
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
     global SUBSET_BASE
@@ -116,7 +117,7 @@ def fetch_title(subset, paper_id, local_offset):
             f"?dataset=laion/Scientific-Summaries&config={subset}"
             f"&split=train&offset={int(local_offset)}&length=1"
         )
-        r = requests.get(url, timeout=15)
+        r = requests.get(url, timeout=10)
         if r.status_code == 200:
             rows = r.json().get("rows", [])
             if rows:
@@ -129,7 +130,7 @@ def fetch_title(subset, paper_id, local_offset):
         try:
             arxiv_id = str(paper_id).replace("v1", "").replace("v2", "").replace("v3", "")
             url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
-            r = requests.get(url, timeout=15)
+            r = requests.get(url, timeout=10)
             if r.status_code == 200 and "<title>" in r.text:
                 m = re.search(r"<title>(.*?)</title>", r.text, re.S)
                 if m:
@@ -155,10 +156,12 @@ def search(query, k):
     if not query:
         return []
     k = int(k)
-    N = 100
+    N = 50
     qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
+    print("Searching index...", flush=True)
     scores, idxs = index.search(qvec, N)
     scores, idxs = scores[0], idxs[0]
+    print(f"Got {len(idxs)} chunks. Grouping by paper...", flush=True)
 
     paper_best = {}
     for s, ci in zip(scores, idxs):
@@ -176,7 +179,7 @@ def search(query, k):
             paper_best[paper_id] = (float(s), ci, pgid)
 
     if len(paper_best) < k:
-        scores2, idxs2 = index.search(qvec, 200)
+        scores2, idxs2 = index.search(qvec, 100)
         for s, ci in zip(scores2[0], idxs2[0]):
             if ci is None or int(ci) < 0:
                 continue
