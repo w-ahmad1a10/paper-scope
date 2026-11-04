@@ -15,6 +15,8 @@ Gradio prints a public `https://....gradio.live` link you can open.
 
 First run downloads ~1.5 GB (FAISS index + paper id mapping) plus the embedding model.
 
+Tip: In Colab, if you hit memory limits, switch to Runtime -> Change runtime type -> High-RAM (or GPU). The index is memory-mapped to keep RAM low.
+
 ## What it does
 1. You type an idea.
 2. It is embedded with `Alibaba-NLP/gte-modernbert-base`.

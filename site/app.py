@@ -48,11 +48,19 @@ def load_resources():
     print("Loading embedding model (gte-modernbert-base)...")
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
     print("Loading FAISS index...")
-    index = faiss.read_index(INDEX_PATH)
-    index.nprobe = 32
-    print("Loading paper id mapping...")
-    paper_order = pd.read_parquet(MAP_PATH)
+    # Memory-map the index so the 1.23 GB file is not fully loaded into RAM.
+    index = faiss.read_index(INDEX_PATH, faiss.IO_FLAG_MMAP)
+    index.nprobe = 16
+    print("Loading paper id mapping (only needed columns)...")
+    paper_order = pd.read_parquet(MAP_PATH, columns=["paper_id", "subset"])
+    # Compute per-subset base offsets from the actual mapping (robust to counts).
+    global SUBSET_BASE
+    SUBSET_BASE = {}
+    for s in ["arxiv", "bethgelab", "pubmed", "web-papers"]:
+        matches = np.where(paper_order["subset"].values == s)[0]
+        SUBSET_BASE[s] = int(matches[0]) if len(matches) else 0
     print(f"Ready. Papers in index mapping: {len(paper_order):,}")
+    print("Subset bases:", SUBSET_BASE)
 
 
 def fetch_title(subset, paper_id, local_offset):
@@ -115,6 +123,8 @@ def search(query, k):
         if idx is None or int(idx) < 0:
             continue
         idx = int(idx)
+        if idx >= len(paper_order):
+            continue
         prow = paper_order.iloc[idx]
         paper_id = str(prow["paper_id"])
         subset = str(prow["subset"])
