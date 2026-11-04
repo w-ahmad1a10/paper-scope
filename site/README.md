@@ -1,6 +1,6 @@
-# Idea -> Nearest Paper
+# Idea -> Nearest Paper (chunk-based)
 
-Gradio app for semantic search over LAION Scientific-Summaries (~22M papers).
+Gradio app for semantic search over LAION Scientific-Summaries (~22M papers, 60.3M chunks).
 
 ## Run in Google Colab
 
@@ -13,17 +13,16 @@ Gradio app for semantic search over LAION Scientific-Summaries (~22M papers).
 
 Gradio prints a public `https://....gradio.live` link you can open.
 
-First run downloads ~1.5 GB (one FAISS index + paper id mapping) plus the embedding model.
-
-Tip: In Colab, if you hit memory limits, switch to Runtime -> Change runtime type -> High-RAM (or GPU). The index is memory-mapped to keep RAM low.
+First run downloads ~3.4 GB (chunks FAISS index) + builds a ~480 MB chunk->paper mapping
+(streamed from Hugging Face, a few minutes) + the embedding model. Later runs are fast.
 
 ## What it does
 1. You type an idea.
 2. It is embedded with `Alibaba-NLP/gte-modernbert-base`.
-3. Searched against the `concatenated_summary` FAISS index (21.8M papers).
-4. Similarity scores (cosine, 0-1) are returned for the top-k nearest papers.
-5. Each result's title and link are fetched on demand from Hugging Face (no big data download).
-6. Results shown as: Rank, Score, Title, Subset, Paper ID, Link.
+3. Oversamples N=200 nearest chunks from the chunks FAISS index (60.3M vectors).
+4. Groups chunks by paper and keeps each paper's best matching passage (max-pool).
+5. Dedupes and returns top-k papers by best passage score.
+6. Titles and links are fetched on demand from Hugging Face (no big data download).
 
 ## Credit
 Data and indices: LAION Scientific-Summaries (Project Alexandria), CC-BY-4.0.
