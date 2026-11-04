@@ -93,7 +93,7 @@ def load_resources():
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
     print("Loading FAISS chunks index (memory-mapped)...")
     index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP)
-    index.nprobe = 32
+    index.nprobe = 16
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
     global SUBSET_BASE
@@ -157,7 +157,7 @@ def search_ui(query, k):
         return []
     k = int(k)
     try:
-        N = 100
+        N = 50
         qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
         scores, idxs = index.search(qvec, N)
         scores, idxs = scores[0], idxs[0]
@@ -178,7 +178,7 @@ def search_ui(query, k):
                 paper_best[paper_id] = (float(s), ci, pgid)
 
         if len(paper_best) < k:
-            scores2, idxs2 = index.search(qvec, 500)
+            scores2, idxs2 = index.search(qvec, 200)
             for s, ci in zip(scores2[0], idxs2[0]):
                 if ci is None or int(ci) < 0:
                     continue
