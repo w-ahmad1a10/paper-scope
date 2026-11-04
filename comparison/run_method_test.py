@@ -31,57 +31,55 @@ from huggingface_hub import hf_hub_download
 
 HF_REPO = "w-ahmad/paper-scope-vectors"
 
-# Section heading patterns for method extraction
+# Section heading patterns for method extraction from running text.
+# Headings appear inline (not on separate lines) in HF extracted text.
+# Headings are inline in running text, preceded by period+space or newline or start
 METHOD_HEADINGS = re.compile(
-    r"(?im)^\s*(?:\d+\.?\s*)?(method(?:s|ology)?|approach|our approach|proposed approach|"
-    r"proposed method|model|architecture|framework|system|technical approach|"
-    r"method details|methodology)\s*$",
+    r"(?:^|\.\s+|\n\s+)(method(?:s|ology)?|approach|our approach|proposed approach|"
+    r"proposed method|architecture|framework|design|overview)\s+(?=[A-Z0-9])",
+    re.IGNORECASE,
 )
 
 NEXT_SECTION_HEADINGS = re.compile(
-    r"(?im)^\s*(?:\d+\.?\s*)?(experiment(?:s|al)?|result(?:s)?|evaluation|"
-    r"conclusion(?:s)?|discussion|limitation(?:s)?|reference(?:s)?|"
-    r"bibliography|appendix|ablation|analysis)\s*$",
+    r"(?:^|\.\s+|\n\s+)(experiment(?:s|al)?|result(?:s)?|evaluation|"
+    r"conclusion(?:s)?|discussion(?:s)?|limitation(?:s)?|reference(?:s)?|"
+    r"bibliography|appendix|ablation|analysis|acknowledgement(?:s)?|related work)\s+(?=[A-Z0-9])",
+    re.IGNORECASE,
 )
 
 
 def extract_method_section(full_text: str) -> str | None:
-    """Extract method section from full text using heading patterns."""
-    lines = full_text.splitlines()
-    method_start = None
-    method_end = None
+    """Extract method section from running text using heading patterns.
 
+    Works on HF extracted text (running text with inline headings).
+    Finds the first method-related heading and captures text until the
+    next known section heading.
+    """
     # Find method section start
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if METHOD_HEADINGS.match(stripped):
-            method_start = i
-            break
-
-    if method_start is None:
+    method_match = METHOD_HEADINGS.search(full_text)
+    if method_match is None:
         return None
 
+    # Start after the heading
+    method_start = method_match.end()
+
     # Find next section after method
-    for i in range(method_start + 1, len(lines)):
-        stripped = lines[i].strip()
-        if NEXT_SECTION_HEADINGS.match(stripped):
-            method_end = i
-            break
+    next_match = NEXT_SECTION_HEADINGS.search(full_text, method_start)
+    if next_match is None:
+        method_end = min(method_start + 8000, len(full_text))
+    else:
+        method_end = next_match.start()
 
-    if method_end is None:
-        method_end = min(method_start + 200, len(lines))  # cap at 200 lines
-
-    method_text = "\n".join(lines[method_start:method_end]).strip()
-
-    # Remove the heading itself
-    method_lines = method_text.splitlines()
-    if method_lines:
-        method_text = "\n".join(method_lines[1:]).strip()
+    method_text = full_text[method_start:method_end].strip()
 
     # Check minimum length
     word_count = len(method_text.split())
     if word_count < 50:
         return None
+
+    # Truncate if too long
+    if word_count > 2000:
+        method_text = " ".join(method_text.split()[:2000])
 
     return method_text
 
