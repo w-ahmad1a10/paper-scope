@@ -1,20 +1,20 @@
-"""Idea -> nearest paper search over LAION Scientific-Summaries (chunk-based).
+"""Idea -> nearest paper search over LAION Scientific-Summaries (chunk-based, CLI).
 
-Runs in Google Colab. Exposes a Gradio UI via a public share link.
+Run from a Colab cell:
+    !python app.py "your idea here" --k 10
 
-Method: oversample N chunks from the chunks FAISS index, group by paper,
-max-pool scores (best passage per paper), dedupe, take top-k. This finds
-papers whose best matching passage matches the user's idea.
+No web server, no Gradio. Results print to stdout.
 
 Credit: LAION Project Alexandria, CC-BY-4.0.
 """
+import argparse
 import os
 import re
+import sys
 import time
 import numpy as np
 import pandas as pd
 import faiss
-import gradio as gr
 import requests
 from huggingface_hub import snapshot_download
 from sentence_transformers import SentenceTransformer
@@ -63,7 +63,6 @@ def ensure_files():
 
 
 def build_chunk_mapping():
-    """Build (and cache) an int64 array: chunk_idx -> paper_global_idx."""
     global chunk_to_paper
     if os.path.exists(CHUNK_TO_PAPER_NPY):
         print("Loading cached chunk->paper mapping...")
@@ -75,12 +74,12 @@ def build_chunk_mapping():
     total = 0
     for rel in CHUNK_PARQUETS:
         url = f"hf://datasets/{REPO_ID}/{rel}"
-        print(f"  reading {rel} ...")
+        print(f"  reading {rel} ...", flush=True)
         df = pd.read_parquet(url, columns=["paper_global_idx"])
         arr = df["paper_global_idx"].to_numpy(dtype=np.int64)
         parts.append(arr)
         total += len(arr)
-        print(f"    {len(arr):,} chunks (running total {total:,})")
+        print(f"    {len(arr):,} chunks (running total {total:,})", flush=True)
         del df
     chunk_to_paper = np.concatenate(parts)
     np.save(CHUNK_TO_PAPER_NPY, chunk_to_paper)
@@ -93,7 +92,7 @@ def load_resources():
     model = SentenceTransformer("Alibaba-NLP/gte-modernbert-base")
     print("Loading FAISS chunks index (memory-mapped)...")
     index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_MMAP)
-    index.nprobe = 16
+    index.nprobe = 32
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
     global SUBSET_BASE
@@ -102,7 +101,7 @@ def load_resources():
         matches = np.where(paper_order["subset"].values == s)[0]
         SUBSET_BASE[s] = int(matches[0]) if len(matches) else 0
     build_chunk_mapping()
-    print(f"Ready. Papers in mapping: {len(paper_order):,}  Chunks: {len(chunk_to_paper):,}")
+    print(f"Ready. Papers: {len(paper_order):,}  Chunks: {len(chunk_to_paper):,}")
 
 
 def fetch_title(subset, paper_id, local_offset):
@@ -117,7 +116,7 @@ def fetch_title(subset, paper_id, local_offset):
             f"?dataset=laion/Scientific-Summaries&config={subset}"
             f"&split=train&offset={int(local_offset)}&length=1"
         )
-        r = requests.get(url, timeout=30)
+        r = requests.get(url, timeout=15)
         if r.status_code == 200:
             rows = r.json().get("rows", [])
             if rows:
@@ -130,7 +129,7 @@ def fetch_title(subset, paper_id, local_offset):
         try:
             arxiv_id = str(paper_id).replace("v1", "").replace("v2", "").replace("v3", "")
             url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
-            r = requests.get(url, timeout=30)
+            r = requests.get(url, timeout=15)
             if r.status_code == 200 and "<title>" in r.text:
                 m = re.search(r"<title>(.*?)</title>", r.text, re.S)
                 if m:
@@ -151,19 +150,34 @@ def make_link(subset, paper_id, doi):
     return None
 
 
-def search_ui(query, k):
+def search(query, k):
     query = (query or "").strip()
     if not query:
         return []
     k = int(k)
-    try:
-        N = 50
-        qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
-        scores, idxs = index.search(qvec, N)
-        scores, idxs = scores[0], idxs[0]
+    N = 100
+    qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
+    scores, idxs = index.search(qvec, N)
+    scores, idxs = scores[0], idxs[0]
 
-        paper_best = {}
-        for s, ci in zip(scores, idxs):
+    paper_best = {}
+    for s, ci in zip(scores, idxs):
+        if ci is None or int(ci) < 0:
+            continue
+        ci = int(ci)
+        if ci >= len(chunk_to_paper):
+            continue
+        pgid = int(chunk_to_paper[ci])
+        if pgid >= len(paper_order):
+            continue
+        prow = paper_order.iloc[pgid]
+        paper_id = str(prow["paper_id"])
+        if paper_id not in paper_best or float(s) > paper_best[paper_id][0]:
+            paper_best[paper_id] = (float(s), ci, pgid)
+
+    if len(paper_best) < k:
+        scores2, idxs2 = index.search(qvec, 200)
+        for s, ci in zip(scores2[0], idxs2[0]):
             if ci is None or int(ci) < 0:
                 continue
             ci = int(ci)
@@ -177,63 +191,42 @@ def search_ui(query, k):
             if paper_id not in paper_best or float(s) > paper_best[paper_id][0]:
                 paper_best[paper_id] = (float(s), ci, pgid)
 
-        if len(paper_best) < k:
-            scores2, idxs2 = index.search(qvec, 200)
-            for s, ci in zip(scores2[0], idxs2[0]):
-                if ci is None or int(ci) < 0:
-                    continue
-                ci = int(ci)
-                if ci >= len(chunk_to_paper):
-                    continue
-                pgid = int(chunk_to_paper[ci])
-                if pgid >= len(paper_order):
-                    continue
-                prow = paper_order.iloc[pgid]
-                paper_id = str(prow["paper_id"])
-                if paper_id not in paper_best or float(s) > paper_best[paper_id][0]:
-                    paper_best[paper_id] = (float(s), ci, pgid)
+    ranked = sorted(paper_best.items(), key=lambda kv: -kv[1][0])[:k]
 
-        ranked = sorted(paper_best.items(), key=lambda kv: -kv[1][0])[:k]
-
-        out = []
-        for rank, (paper_id, (score, ci, pgid)) in enumerate(ranked, start=1):
-            prow = paper_order.iloc[pgid]
-            subset = str(prow["subset"])
-            base = SUBSET_BASE.get(subset, 0)
-            local_offset = pgid - base
-            try:
-                title, doi = fetch_title(subset, paper_id, local_offset)
-            except Exception:
-                title, doi = paper_id, None
-            link = make_link(subset, paper_id, doi)
-            out.append([rank, round(float(score), 4), title or paper_id, subset, paper_id, link or ""])
-        print(f"Search done: {len(out)} results")
-        return out
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return []
+    out = []
+    for rank, (paper_id, (score, ci, pgid)) in enumerate(ranked, start=1):
+        prow = paper_order.iloc[pgid]
+        subset = str(prow["subset"])
+        base = SUBSET_BASE.get(subset, 0)
+        local_offset = pgid - base
+        title, doi = fetch_title(subset, paper_id, local_offset)
+        link = make_link(subset, paper_id, doi)
+        out.append((rank, round(float(score), 4), title or paper_id, subset, paper_id, link or ""))
+        print(f"  {rank}. [{round(float(score),4)}] {title or paper_id}", flush=True)
+    return out
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Idea -> nearest paper (chunk-based)")
+    parser.add_argument("query", nargs="+", help="your idea / research question")
+    parser.add_argument("--k", type=int, default=10, help="top-k papers")
+    args = parser.parse_args()
+    query = " ".join(args.query)
+
     ensure_files()
     load_resources()
-    with gr.Blocks(title="Idea -> Nearest Paper (chunks)") as demo:
-        gr.Markdown(
-            "# Idea → Nearest Paper (chunk-based)\n"
-            "Searches 60.3M text chunks from LAION Scientific-Summaries, groups by "
-            "paper, keeps each paper's best matching passage. Uses "
-            "`Alibaba-NLP/gte-modernbert-base`.\n\n"
-            "Credit: LAION Project Alexandria, CC-BY-4.0."
-        )
-        with gr.Row():
-            query = gr.Textbox(label="Your idea / research question", lines=3, scale=4)
-            k = gr.Slider(1, 20, value=10, step=1, label="Top-k papers", scale=1)
-        btn = gr.Button("Search")
-        out = gr.Dataframe(headers=["Rank", "Score", "Title", "Subset", "Paper ID", "Link"], wrap=True)
-        btn.click(search_ui, inputs=[query, k], outputs=out)
-        query.submit(search_ui, inputs=[query, k], outputs=out)
-    demo.launch(share=True)
+
+    print(f"\nQuery: {query}")
+    print(f"Top {args.k}:\n")
+    t0 = time.time()
+    results = search(query, args.k)
+    dt = time.time() - t0
+    print(f"\nDone in {dt:.1f}s. {len(results)} results.")
+
+    # also print a tab-separated block for easy copy
+    print("\n--- RESULTS ---")
+    for r in results:
+        print(f"{r[0]}\t{r[1]}\t{r[2]}\t{r[3]}\t{r[4]}\t{r[5]}")
 
 
 if __name__ == "__main__":
