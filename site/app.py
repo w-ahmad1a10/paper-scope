@@ -1,15 +1,7 @@
 """Idea -> nearest paper search over LAION Scientific-Summaries.
 
 Runs in Google Colab. Exposes a Gradio UI via a public share link.
-
-Searches TWO views:
-  1. concatenated_summary  -> FAISS semantic search (whole paper), top 10.
-  2. methodological_details -> re-rank of the top 50 concat results by keyword
-     overlap in the methodological_details field (fetched on demand). Top 10.
-
-Note: the dataset ships only ONE FAISS summary index (concatenated_summary).
-methodological_details has a BM25 index (~19 GB) which is too heavy for Colab,
-so we re-rank the concat candidates by methods text instead.
+Searches ONE index: concatenated_summary (whole paper, 21.8M papers).
 
 Credit: LAION Project Alexandria, CC-BY-4.0.
 """
@@ -37,7 +29,6 @@ SUBSET_BASE = {
 }
 
 title_cache = {}
-row_cache = {}
 model = None
 index = None
 paper_order = None
@@ -74,11 +65,12 @@ def load_resources():
     print(f"Ready. Papers in mapping: {len(paper_order):,}")
 
 
-def fetch_row(subset, local_offset):
+def fetch_title(subset, paper_id, local_offset):
     key = (subset, int(local_offset))
-    if key in row_cache:
-        return row_cache[key]
-    data = {"title": None, "doi": None, "methods": None}
+    if key in title_cache:
+        return title_cache[key]
+    title = None
+    doi = None
     try:
         url = (
             "https://datasets-server.huggingface.co/rows"
@@ -90,21 +82,25 @@ def fetch_row(subset, local_offset):
             rows = r.json().get("rows", [])
             if rows:
                 row = rows[0]["row"]
-                data["title"] = row.get("source_title") or row.get("summary_title")
-                data["doi"] = row.get("source_doi")
-                data["methods"] = row.get("methodological_details")
+                title = row.get("source_title") or row.get("summary_title")
+                doi = row.get("source_doi")
     except Exception as e:
         print("HF rows fetch failed:", repr(e))
-    if not data["title"] and str(subset).startswith("arxiv"):
+    if not title and str(subset).startswith("arxiv"):
         try:
-            # fallback arxiv API for title only
-            pass
-        except Exception:
-            pass
-    if not data["title"]:
-        data["title"] = None
-    row_cache[key] = data
-    return data
+            arxiv_id = str(paper_id).replace("v1", "").replace("v2", "").replace("v3", "")
+            url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
+            r = requests.get(url, timeout=30)
+            if r.status_code == 200 and "<title>" in r.text:
+                m = re.search(r"<title>(.*?)</title>", r.text, re.S)
+                if m:
+                    title = m.group(1).strip()
+        except Exception as e:
+            print("arXiv API fetch failed:", repr(e))
+    if not title:
+        title = paper_id
+    title_cache[key] = (title, doi)
+    return title_cache[key]
 
 
 def make_link(subset, paper_id, doi):
@@ -115,26 +111,14 @@ def make_link(subset, paper_id, doi):
     return None
 
 
-def keyword_score(query, text):
-    if not text:
-        return 0.0
-    q_tokens = [t.lower() for t in query.split() if len(t) > 2]
-    if not q_tokens:
-        return 0.0
-    t = text.lower()
-    return sum(t.count(tok) for tok in q_tokens)
-
-
 def search_ui(query, k):
     query = (query or "").strip()
     if not query:
-        return [], []
+        return []
     k = int(k)
     qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
-    scores, idxs = index.search(qvec, max(k, 50))
-
-    concat_rows = []
-    candidates = []
+    scores, idxs = index.search(qvec, k)
+    out = []
     for rank, (score, i) in enumerate(zip(scores[0], idxs[0]), start=1):
         if i is None or int(i) < 0:
             continue
@@ -146,25 +130,10 @@ def search_ui(query, k):
         subset = str(prow["subset"])
         base = SUBSET_BASE.get(subset, 0)
         local_offset = i - base
-        data = fetch_row(subset, local_offset)
-        title = data["title"] or paper_id
-        doi = data["doi"]
+        title, doi = fetch_title(subset, paper_id, local_offset)
         link = make_link(subset, paper_id, doi)
-        row = [rank, round(float(score), 4), title, subset, paper_id, link or ""]
-        candidates.append((row, data.get("methods") or ""))
-        if len(concat_rows) < k:
-            concat_rows.append(row)
-
-    # re-rank candidates by methodological_details keyword overlap
-    scored = []
-    for row, methods in candidates:
-        scored.append((keyword_score(query, methods), row))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    method_rows = []
-    for rank, (sc, row) in enumerate(scored[:k], start=1):
-        method_rows.append([rank, row[1], row[2], row[3], row[4], row[5]])
-
-    return concat_rows, method_rows
+        out.append([rank, round(float(score), 4), title, subset, paper_id, link or ""])
+    return out
 
 
 def main():
@@ -175,20 +144,16 @@ def main():
             "# Idea → Nearest Paper\n"
             "Semantic search over ~22M papers from LAION Scientific-Summaries "
             "(Project Alexandria), using `Alibaba-NLP/gte-modernbert-base`.\n\n"
-            "Two views: **concatenated_summary** (FAISS, whole paper) and "
-            "**methodological_details** (re-ranked from top-50 by methods text).\n\n"
+            "Index: `concatenated_summary` (all fields combined).\n\n"
             "Credit: LAION, CC-BY-4.0."
         )
         with gr.Row():
             query = gr.Textbox(label="Your idea / research question", lines=3, scale=4)
-            k = gr.Slider(1, 20, value=10, step=1, label="Top-k per view", scale=1)
+            k = gr.Slider(1, 20, value=10, step=1, label="Top-k", scale=1)
         btn = gr.Button("Search")
-        gr.Markdown("### concatenated_summary (FAISS, whole paper)")
-        out1 = gr.Dataframe(headers=["Rank", "Score", "Title", "Subset", "Paper ID", "Link"], wrap=True)
-        gr.Markdown("### methodological_details (re-ranked by methods text)")
-        out2 = gr.Dataframe(headers=["Rank", "Score", "Title", "Subset", "Paper ID", "Link"], wrap=True)
-        btn.click(search_ui, inputs=[query, k], outputs=[out1, out2])
-        query.submit(search_ui, inputs=[query, k], outputs=[out1, out2])
+        out = gr.Dataframe(headers=["Rank", "Score", "Title", "Subset", "Paper ID", "Link"], wrap=True)
+        btn.click(search_ui, inputs=[query, k], outputs=out)
+        query.submit(search_ui, inputs=[query, k], outputs=out)
     demo.launch(share=True)
 
 

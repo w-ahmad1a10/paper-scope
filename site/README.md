@@ -21,8 +21,7 @@ Tip: In Colab, if you hit memory limits, switch to Runtime -> Change runtime typ
 1. You type an idea.
 2. It is embedded with `Alibaba-NLP/gte-modernbert-base`.
 3. Searched against the `concatenated_summary` FAISS index (21.8M papers).
-4. Top results are also re-ranked by keyword overlap in `methodological_details` (fetched on demand) to surface methods-focused papers.
-5. Similarity scores (cosine, 0-1) are returned for the top-k papers from each view.
+4. Similarity scores (cosine, 0-1) are returned for the top-k nearest papers.
 5. Each result's title and link are fetched on demand from Hugging Face (no big data download).
 6. Results shown as: Rank, Score, Title, Subset, Paper ID, Link.
 
