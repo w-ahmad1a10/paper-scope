@@ -100,7 +100,7 @@ def load_resources():
     print("Loading FAISS chunks index (fully into RAM)...")
     faiss.omp_set_num_threads(1)
     index = faiss.read_index(os.path.join(LOCAL_DIR, INDEX_REL), faiss.IO_FLAG_ONDISK_SAME_DIR)
-    index.nprobe = 8
+    index.nprobe = 32
     print("Index loaded into RAM.")
     print("Loading paper id mapping (only needed columns)...")
     paper_order = pd.read_parquet(os.path.join(LOCAL_DIR, MAP_REL), columns=["paper_id", "subset"])
@@ -179,7 +179,7 @@ def search(query, k):
     if not query:
         return []
     k = int(k)
-    N = 30
+    N = 100
     qvec = model.encode([query], normalize_embeddings=True).astype(np.float32)
     print("Searching index...", flush=True)
     scores, idxs = index.search(qvec, N)
@@ -202,7 +202,7 @@ def search(query, k):
             paper_best[paper_id] = (float(s), ci, pgid)
 
     if len(paper_best) < k:
-        scores2, idxs2 = index.search(qvec, 60)
+        scores2, idxs2 = index.search(qvec, 200)
         for s, ci in zip(scores2[0], idxs2[0]):
             if ci is None or int(ci) < 0:
                 continue
